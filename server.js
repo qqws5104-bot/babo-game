@@ -294,6 +294,16 @@ io.on('connection', (socket) => {
       p.forcedCard = cardId;
       addLog({ type: 'admin_force_card', player: playerId, card: cardId });
     });
+    socket.on('admin:specialEvent', ({ cardId, label }) => {
+      if (!CARDS[cardId] || !state.running) return;
+      [1, 2].forEach((id) => {
+        const p = state[`p${id}`];
+        if (!p.defeated) p.forcedCard = cardId;
+      });
+      addLog({ type: 'special_event', card: cardId, label: label || CARDS[cardId].name });
+      io.emit('specialEvent', { cardName: CARDS[cardId].name, label: label || CARDS[cardId].name });
+      broadcastState();
+    });
     return;
   }
 

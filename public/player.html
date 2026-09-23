@@ -170,6 +170,15 @@
     setTimeout(() => { bar.remove(); document.getElementById('defendBtn').classList.add('hidden'); }, previewMs);
   });
 
+  socket.on('specialEvent', ({ cardName, label }) => {
+    const bar = document.createElement('div');
+    bar.className = 'incoming';
+    bar.style.background = '#4b1528';
+    bar.textContent = `특수 이벤트: ${label}!`;
+    document.body.appendChild(bar);
+    setTimeout(() => bar.remove(), 2200);
+  });
+
   socket.on('defeated', () => {
     document.body.classList.add('office');
     showResult(false);

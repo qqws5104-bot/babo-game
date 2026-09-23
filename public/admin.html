@@ -31,12 +31,20 @@
   .status { font-size: 13px; color: #aaa; margin-bottom: 10px; }
   .log { background: #111; border-radius: 12px; padding: 12px; height: 260px; overflow-y: auto; font-family: monospace; font-size: 12px; line-height: 1.6; }
   .log div { border-bottom: 1px solid #222; padding: 2px 0; }
+  .phase-track { display: flex; gap: 6px; margin-bottom: 16px; }
+  .phase-step { flex: 1; text-align: center; font-size: 12px; padding: 8px 4px; border-radius: 8px; background: #262624; border: 1px solid #3a3a38; color: #777; }
+  .phase-step.active { background: #0f6e56; color: #fff; border-color: #0f6e56; }
+  .phase-step.done { background: #333; color: #aaa; }
+  .event-panel { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .event-btn { background: #4b1528; border-color: #72243e; }
+  .event-btn:hover { background: #62203a; }
+  .flash-banner { background: #E24B4A; color: #fff; text-align: center; padding: 8px; border-radius: 8px; margin-bottom: 12px; font-weight: 600; display: none; }
 </style>
 </head>
 <body>
   <div class="top">
     <div>
-      <h1>위장 게이지 대결 — 관제 콘솔</h1>
+      <h1>위장 게이지 대결 — 진행 상황</h1>
       <div class="status" id="statusLine">연결 대기 중</div>
     </div>
     <div class="controls">
@@ -44,6 +52,19 @@
       <button id="skipBtn">다음 구간</button>
       <button class="danger" id="resetBtn">리셋</button>
       <button id="downloadBtn">로그 다운로드</button>
+    </div>
+  </div>
+
+  <div class="phase-track" id="phaseTrack"></div>
+
+  <div class="flash-banner" id="flashBanner"></div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <h2>특수 이벤트 발동 (양쪽 동시)</h2>
+    <div class="event-panel">
+      <button class="event-btn" onclick="triggerEvent('double', '이중반전 폭탄')">이중반전 폭탄</button>
+      <button class="event-btn" onclick="triggerEvent('audio', '청각 이중부정 기습')">청각 이중부정 기습</button>
+      <button class="event-btn" onclick="triggerEvent('colorword', '색상단어 몰아치기')">색상단어 몰아치기</button>
     </div>
   </div>
 
@@ -58,7 +79,12 @@
 <script>
   const socket = io({ query: { role: 'admin' } });
   let fullLog = [];
-  const CARD_IDS = ['giboo', 'leftright', 'colorword', 'number', 'audio', 'double'];
+  const PHASES = [
+    { id: 'warmup', label: '워밍업' },
+    { id: 'act1', label: '1막' },
+    { id: 'act2', label: '2막' },
+    { id: 'boss', label: '보스전' },
+  ];
 
   function playerCard(id, p) {
     const gaugeClass = p.gauge <= 30 ? 'low' : (p.gauge <= 50 ? 'warn' : '');
@@ -69,16 +95,6 @@
         <div class="gauge-bar"><div class="gauge-fill ${gaugeClass}" style="width:${p.gauge}%"></div></div>
         <div class="row"><span>간섭 스택</span><span>${p.stack.toFixed(1)}</span></div>
         <div class="row"><span>콤보</span><span>${p.combo}</span></div>
-        <div class="inline">
-          <input type="number" id="gaugeInput${id}" placeholder="게이지" min="0" max="100" />
-          <button onclick="setGauge(${id})">적용</button>
-        </div>
-        <div class="inline">
-          <select id="cardSelect${id}">
-            ${CARD_IDS.map((c) => `<option value="${c}">${c}</option>`).join('')}
-          </select>
-          <button onclick="forceCard(${id})">다음 카드 강제</button>
-        </div>
       </div>
     `;
   }
@@ -87,9 +103,23 @@
     document.getElementById('statusLine').textContent =
       (s.running ? '진행 중 — ' + s.phaseLabel : (s.winner ? '종료 — 승자: 플레이어 ' + s.winner : '대기 중'));
     document.getElementById('playerGrid').innerHTML = playerCard(1, s.p1) + playerCard(2, s.p2);
+
+    const track = document.getElementById('phaseTrack');
+    const currentIdx = PHASES.findIndex((ph) => ph.id === s.phase);
+    track.innerHTML = PHASES.map((ph, i) => {
+      const cls = i === currentIdx ? 'active' : (i < currentIdx ? 'done' : '');
+      return `<div class="phase-step ${cls}">${ph.label}</div>`;
+    }).join('');
   }
 
   socket.on('state', render);
+
+  socket.on('specialEvent', ({ label }) => {
+    const banner = document.getElementById('flashBanner');
+    banner.textContent = `특수 이벤트 발동: ${label}`;
+    banner.style.display = 'block';
+    setTimeout(() => { banner.style.display = 'none'; }, 3000);
+  });
 
   socket.on('log', (entry) => {
     fullLog.push(entry);
@@ -123,13 +153,8 @@
     a.click();
   };
 
-  function setGauge(id) {
-    const val = Number(document.getElementById('gaugeInput' + id).value);
-    socket.emit('admin:setGauge', { playerId: id, value: val });
-  }
-  function forceCard(id) {
-    const cardId = document.getElementById('cardSelect' + id).value;
-    socket.emit('admin:forceCard', { playerId: id, cardId });
+  function triggerEvent(cardId, label) {
+    socket.emit('admin:specialEvent', { cardId, label });
   }
 </script>
 </body>
