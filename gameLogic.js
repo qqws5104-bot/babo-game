@@ -38,20 +38,23 @@ function generateRound(cardId) {
   const card = CARDS[cardId];
   let options = [];
   let correct = null;
+  let correctMode = 'exact'; // 'exact' | 'exclude'
+  let excludeValue = null;
   let prompt = '';
+  let bubble = null;
 
   if (card.input === 'foot') {
-    // 가위바위보: 화면이 외치는 것의 "패배패"를 냄 (반전)
-    const beats = { 가위: '바위', 바위: '보', 보: '가위' }; // 가위는 바위에게 짐
+    // 가위바위보 반전: 외친 것과 "다른" 아무 패나 내면 성공, 외친 것과 "똑같이" 내면 본능이 나온 것(실패)
     const shout = ['가위', '바위', '보'][Math.floor(Math.random() * 3)];
-    prompt = `화면: "${shout}!"`;
-    options = ['가위', '바위', '보'];
-    correct = beats[shout]; // 정답은 "지는 패" = 반전
+    bubble = shout;
+    prompt = `${shout}!`;
+    options = shuffle(['가위', '바위', '보']); // 매 라운드 버튼 순서 랜덤
+    correctMode = 'exclude';
+    excludeValue = shout;
   } else if (card.id === 'leftright') {
     const dir = Math.random() < 0.5 ? '왼쪽' : '오른쪽';
     prompt = `화면이 ${dir}을 가리켜요`;
-    const slots = pickRandomSlots(2);
-    options = slots.map((slot) => ({ slot, label: slot === 0 ? '왼쪽' : '오른쪽' }));
+    options = shuffle(['왼쪽', '오른쪽']); // 항상 하나씩, 화면 배치 순서만 랜덤
     correct = dir === '왼쪽' ? '오른쪽' : '왼쪽';
   } else if (card.id === 'colorword') {
     const word = COLORS[Math.floor(Math.random() * 4)];
@@ -80,7 +83,7 @@ function generateRound(cardId) {
     correct = released ? dir : (dir === '왼쪽' ? '오른쪽' : '왼쪽');
   }
 
-  return { cardId: card.id, cardName: card.name, tier: card.tier, penalty: card.penalty, stackGain: card.stackGain, prompt, options, correct, issuedAt: Date.now() };
+  return { cardId: card.id, cardName: card.name, tier: card.tier, penalty: card.penalty, stackGain: card.stackGain, prompt, bubble, options, correct, correctMode, excludeValue, issuedAt: Date.now() };
 }
 
 function pickRandomSlots(count) {

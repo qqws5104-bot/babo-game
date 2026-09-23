@@ -149,7 +149,11 @@ function resolveAnswer(id, answer) {
   const round = p.currentRound;
   clearTimeout(roundTimers[id]);
 
-  const isCorrect = answer !== null && String(answer) === String(round.correct);
+  const isCorrect = answer !== null && (
+    round.correctMode === 'exclude'
+      ? String(answer) !== String(round.excludeValue)
+      : String(answer) === String(round.correct)
+  );
   const phase = currentPhase();
   const isWarmup = phase && phase.id === 'warmup';
 
