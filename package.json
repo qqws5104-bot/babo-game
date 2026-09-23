@@ -1,0 +1,16 @@
+{
+  "name": "foolgame",
+  "version": "0.1.0",
+  "description": "위장 게이지 대결 - 사내 테스트용 프로토타입",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  }
+}

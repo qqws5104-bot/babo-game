@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>위장 게이지 대결</title>
+<style>
+  :root { --bg: #fdfaf3; --card: #ffffff; --accent: #0f6e56; --danger: #a32d2d; --warn: #854f0b; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, "Apple SD Gothic Neo", sans-serif;
+    background: var(--bg); color: #2c2c2a; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; padding: 20px;
+    transition: background .3s;
+  }
+  body.warning { background: #fceceb; animation: flash 0.6s infinite alternate; }
+  @keyframes flash { from { box-shadow: inset 0 0 0 6px #f09595; } to { box-shadow: inset 0 0 0 6px transparent; } }
+  body.office { background: #e9eaec; }
+  .topbar { width: 100%; max-width: 480px; display: flex; justify-content: space-between; font-size: 13px; color: #5f5e5a; margin-bottom: 10px; }
+  .panel { width: 100%; max-width: 480px; background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .gauge-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 600; }
+  .gauge-bar { height: 16px; background: #eee; border-radius: 999px; overflow: hidden; }
+  .gauge-fill { height: 100%; background: var(--accent); transition: width .3s; }
+  .gauge-fill.low { background: var(--danger); }
+  .oppo-badge { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 999px; background: #f4c0d1; color: #72243e; margin-top: 6px; }
+  .prompt { text-align: center; font-size: 22px; font-weight: 700; margin: 18px 0; min-height: 60px; }
+  .options { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .opt-btn { min-width: 72px; height: 72px; border-radius: 14px; border: 2px solid #ddd; background: #fff; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .opt-btn:active { transform: scale(0.95); }
+  .foot { background: #e1f5ee; border-color: #5dcaa5; }
+  .actions { display: flex; gap: 10px; width: 100%; max-width: 480px; }
+  .btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .btn-throw { background: var(--accent); color: #fff; }
+  .btn-defend { background: var(--danger); color: #fff; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .incoming { position: fixed; top: 0; left: 0; right: 0; background: var(--danger); color: #fff; text-align: center; padding: 14px; font-weight: 700; z-index: 10; }
+  .result-screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 20; }
+  .result-screen.win { background: #eaf3de; }
+  .result-screen.lose { background: #e9eaec; }
+  .result-screen h1 { font-size: 26px; }
+  .stamp { font-size: 15px; padding: 10px 20px; border-radius: 10px; margin-top: 10px; }
+  .hidden { display: none !important; }
+  .feedback { font-size: 14px; text-align: center; height: 20px; color: var(--accent); font-weight: 600; }
+  .feedback.bad { color: var(--danger); }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <span id="phaseLabel">대기중</span>
+    <span id="stackLabel">간섭스택 0</span>
+  </div>
+
+  <div class="panel">
+    <div class="gauge-row"><span>내 위장 게이지</span><span id="gaugeNum">100</span></div>
+    <div class="gauge-bar"><div class="gauge-fill" id="gaugeFill" style="width:100%"></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="gauge-row" style="margin-bottom:2px;"><span>상대</span><span id="oppoState">플레이 중</span></div>
+    <span class="oppo-badge hidden" id="oppoWarning"><i>⚠</i> 상대 경고모드</span>
+  </div>
+
+  <div class="panel">
+    <div class="prompt" id="prompt">대기 중...</div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-throw" id="throwBtn" disabled>방해 카드 던지기</button>
+    <button class="btn btn-defend hidden" id="defendBtn">방어!</button>
+  </div>
+
+  <div class="result-screen hidden" id="resultScreen">
+    <h1 id="resultTitle"></h1>
+    <div class="stamp" id="resultStamp"></div>
+  </div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const role = params.get('role') === '2' ? '2' : '1';
+  const socket = io({ query: { role } });
+  let myId = role === '2' ? 2 : 1;
+  let currentRound = null;
+
+  socket.on('assigned', ({ id }) => { myId = id; });
+
+  socket.on('round', (round) => {
+    currentRound = round;
+    document.getElementById('feedback').textContent = '';
+    renderRound(round);
+  });
+
+  function renderRound(round) {
+    document.getElementById('prompt').textContent = round.prompt;
+    const optsEl = document.getElementById('options');
+    optsEl.innerHTML = '';
+    const isFoot = round.cardId === 'giboo';
+    round.options.forEach((opt) => {
+      const label = typeof opt === 'object' ? opt.label : opt;
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn' + (isFoot ? ' foot' : '');
+      btn.textContent = label;
+      btn.onclick = () => submitAnswer(label);
+      optsEl.appendChild(btn);
+    });
+  }
+
+  function submitAnswer(value) {
+    if (!currentRound) return;
+    const correct = String(value) === String(currentRound.correct);
+    const fb = document.getElementById('feedback');
+    fb.textContent = correct ? '성공! 계속 위장 중' : '앗, 본능이 나와버렸다';
+    fb.className = 'feedback' + (correct ? '' : ' bad');
+    socket.emit('answer', value);
+    currentRound = null;
+    document.getElementById('options').innerHTML = '';
+    document.getElementById('prompt').textContent = '...';
+  }
+
+  socket.on('publicState', (s) => updateUI(s));
+  socket.on('state', (s) => updateUI(s)); // admin에서도 재사용 가능하도록
+
+  function updateUI(s) {
+    document.getElementById('phaseLabel').textContent = s.phaseLabel || '대기중';
+    const me = myId === 1 ? s.p1 : s.p2;
+    const oppo = myId === 1 ? s.p2 : s.p1;
+    if (!me) return;
+
+    document.getElementById('gaugeNum').textContent = Math.round(me.gauge);
+    const fill = document.getElementById('gaugeFill');
+    fill.style.width = me.gauge + '%';
+    fill.classList.toggle('low', me.gauge <= 30);
+    document.body.classList.toggle('warning', me.warning && !me.defeated);
+
+    document.getElementById('stackLabel').textContent = '간섭스택 ' + Math.floor(me.stack);
+    document.getElementById('throwBtn').disabled = me.stack < 1 || me.defeated || oppo.defeated;
+
+    document.getElementById('oppoState').textContent = oppo.defeated ? '패배함' : (oppo.warning ? '위험!' : '플레이 중');
+    document.getElementById('oppoWarning').classList.toggle('hidden', !oppo.warning || oppo.defeated);
+  }
+
+  document.getElementById('throwBtn').onclick = () => socket.emit('throwInterference');
+  document.getElementById('defendBtn').onclick = () => {
+    socket.emit('defend');
+    document.getElementById('defendBtn').classList.add('hidden');
+  };
+
+  socket.on('incoming', ({ cardName, previewMs }) => {
+    const bar = document.createElement('div');
+    bar.className = 'incoming';
+    bar.textContent = `${cardName} 카드 도착! (${(previewMs/1000).toFixed(1)}초)`;
+    document.body.appendChild(bar);
+    document.getElementById('defendBtn').classList.remove('hidden');
+    setTimeout(() => { bar.remove(); document.getElementById('defendBtn').classList.add('hidden'); }, previewMs);
+  });
+
+  socket.on('defeated', () => {
+    document.body.classList.add('office');
+    showResult(false);
+  });
+  socket.on('opponentDefeated', () => {
+    // 계속 진행, 알림만
+    const fb = document.getElementById('feedback');
+    fb.textContent = '상대가 발각되었습니다! 계속 진행하세요';
+  });
+
+  socket.on('gameOver', ({ winner }) => {
+    showResult(winner === myId);
+  });
+
+  function showResult(won) {
+    const el = document.getElementById('resultScreen');
+    el.classList.remove('hidden');
+    el.classList.add(won ? 'win' : 'lose');
+    document.getElementById('resultTitle').textContent = won ? '오늘도 무사히 바보입니다' : '당신, 사실 일 잘하시죠?';
+    document.getElementById('resultStamp').textContent = won ? '연차 승인' : '출근 확정';
+  }
+</script>
+</body>
+</html>

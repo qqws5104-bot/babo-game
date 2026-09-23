@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>관제 콘솔 - 위장 게이지 대결</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Apple SD Gothic Neo", sans-serif; background: #1c1c1a; color: #eee; margin: 0; padding: 20px; }
+  h1 { font-size: 18px; margin-bottom: 4px; }
+  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .controls { display: flex; gap: 8px; }
+  button { background: #333; color: #fff; border: 1px solid #555; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 13px; }
+  button:hover { background: #444; }
+  button.primary { background: #0f6e56; border-color: #0f6e56; }
+  button.danger { background: #a32d2d; border-color: #a32d2d; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .card { background: #262624; border-radius: 12px; padding: 14px; border: 1px solid #3a3a38; }
+  .card h2 { font-size: 14px; margin: 0 0 10px; display: flex; justify-content: space-between; }
+  .row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; border-bottom: 1px solid #333; }
+  .gauge-bar { height: 10px; background: #333; border-radius: 999px; overflow: hidden; margin: 6px 0 10px; }
+  .gauge-fill { height: 100%; background: #1D9E75; }
+  .gauge-fill.warn { background: #EF9F27; }
+  .gauge-fill.low { background: #E24B4A; }
+  .inline { display: flex; gap: 6px; margin-top: 8px; }
+  input, select { background: #1c1c1a; color: #eee; border: 1px solid #555; border-radius: 6px; padding: 5px 8px; font-size: 12px; width: 70px; }
+  select { width: auto; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+  .badge.warning { background: #FAEEDA; color: #412402; }
+  .badge.defeated { background: #444; color: #ccc; }
+  .status { font-size: 13px; color: #aaa; margin-bottom: 10px; }
+  .log { background: #111; border-radius: 12px; padding: 12px; height: 260px; overflow-y: auto; font-family: monospace; font-size: 12px; line-height: 1.6; }
+  .log div { border-bottom: 1px solid #222; padding: 2px 0; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div>
+      <h1>위장 게이지 대결 — 관제 콘솔</h1>
+      <div class="status" id="statusLine">연결 대기 중</div>
+    </div>
+    <div class="controls">
+      <button class="primary" id="startBtn">세션 시작</button>
+      <button id="skipBtn">다음 구간</button>
+      <button class="danger" id="resetBtn">리셋</button>
+      <button id="downloadBtn">로그 다운로드</button>
+    </div>
+  </div>
+
+  <div class="grid" id="playerGrid"></div>
+
+  <div class="card">
+    <h2>이벤트 로그</h2>
+    <div class="log" id="log"></div>
+  </div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io({ query: { role: 'admin' } });
+  let fullLog = [];
+  const CARD_IDS = ['giboo', 'leftright', 'colorword', 'number', 'audio', 'double'];
+
+  function playerCard(id, p) {
+    const gaugeClass = p.gauge <= 30 ? 'low' : (p.gauge <= 50 ? 'warn' : '');
+    return `
+      <div class="card">
+        <h2>플레이어 ${id} ${p.defeated ? '<span class="badge defeated">패배(출근)</span>' : (p.warning ? '<span class="badge warning">경고모드</span>' : '')}</h2>
+        <div class="row"><span>게이지</span><span>${Math.round(p.gauge)}</span></div>
+        <div class="gauge-bar"><div class="gauge-fill ${gaugeClass}" style="width:${p.gauge}%"></div></div>
+        <div class="row"><span>간섭 스택</span><span>${p.stack.toFixed(1)}</span></div>
+        <div class="row"><span>콤보</span><span>${p.combo}</span></div>
+        <div class="inline">
+          <input type="number" id="gaugeInput${id}" placeholder="게이지" min="0" max="100" />
+          <button onclick="setGauge(${id})">적용</button>
+        </div>
+        <div class="inline">
+          <select id="cardSelect${id}">
+            ${CARD_IDS.map((c) => `<option value="${c}">${c}</option>`).join('')}
+          </select>
+          <button onclick="forceCard(${id})">다음 카드 강제</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function render(s) {
+    document.getElementById('statusLine').textContent =
+      (s.running ? '진행 중 — ' + s.phaseLabel : (s.winner ? '종료 — 승자: 플레이어 ' + s.winner : '대기 중'));
+    document.getElementById('playerGrid').innerHTML = playerCard(1, s.p1) + playerCard(2, s.p2);
+  }
+
+  socket.on('state', render);
+
+  socket.on('log', (entry) => {
+    fullLog.push(entry);
+    appendLogLine(entry);
+  });
+  socket.on('fullLog', (entries) => {
+    fullLog = entries;
+    const el = document.getElementById('log');
+    el.innerHTML = '';
+    entries.forEach(appendLogLine);
+  });
+
+  function appendLogLine(entry) {
+    const el = document.getElementById('log');
+    const div = document.createElement('div');
+    const time = new Date(entry.t).toLocaleTimeString();
+    div.textContent = `[${time}] ${JSON.stringify(entry)}`;
+    el.appendChild(div);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  document.getElementById('startBtn').onclick = () => socket.emit('admin:start');
+  document.getElementById('resetBtn').onclick = () => socket.emit('admin:reset');
+  document.getElementById('skipBtn').onclick = () => socket.emit('admin:skipPhase');
+  document.getElementById('downloadBtn').onclick = () => {
+    const blob = new Blob([JSON.stringify(fullLog, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `foolgame_log_${Date.now()}.json`;
+    a.click();
+  };
+
+  function setGauge(id) {
+    const val = Number(document.getElementById('gaugeInput' + id).value);
+    socket.emit('admin:setGauge', { playerId: id, value: val });
+  }
+  function forceCard(id) {
+    const cardId = document.getElementById('cardSelect' + id).value;
+    socket.emit('admin:forceCard', { playerId: id, cardId });
+  }
+</script>
+</body>
+</html>
