@@ -60,12 +60,8 @@
   <div class="flash-banner" id="flashBanner"></div>
 
   <div class="card" style="margin-bottom:16px;">
-    <h2>특수 이벤트 발동 (양쪽 동시)</h2>
-    <div class="event-panel">
-      <button class="event-btn" onclick="triggerEvent('double', '이중반전 폭탄')">이중반전 폭탄</button>
-      <button class="event-btn" onclick="triggerEvent('audio', '청각 이중부정 기습')">청각 이중부정 기습</button>
-      <button class="event-btn" onclick="triggerEvent('colorword', '색상단어 몰아치기')">색상단어 몰아치기</button>
-    </div>
+    <h2>특수 이벤트</h2>
+    <p style="font-size:13px; color:#aaa; margin:0;">2막·보스전에 자동으로 발동됩니다 (관제자 개입 없음). 발동 시 아래 배너와 로그에 표시됩니다.</p>
   </div>
 
   <div class="grid" id="playerGrid"></div>
@@ -152,10 +148,6 @@
     a.download = `foolgame_log_${Date.now()}.json`;
     a.click();
   };
-
-  function triggerEvent(cardId, label) {
-    socket.emit('admin:specialEvent', { cardId, label });
-  }
 </script>
 </body>
 </html>

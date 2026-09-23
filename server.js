@@ -60,6 +60,7 @@ function sanitizePlayer(p, full) {
     defeated: p.defeated,
     combo: p.combo,
     stack: p.stack,
+    hasForcedCard: !!p.forcedCard,
   };
   return base;
 }
@@ -85,6 +86,7 @@ function clearAllTimers() {
     clearTimeout(nextRoundTimers[id]);
   });
   clearTimeout(phaseTimer);
+  clearAutoEvents();
 }
 
 function startGame() {
@@ -93,6 +95,44 @@ function startGame() {
   state.phaseIndex = 0;
   addLog({ type: 'session_start' });
   enterPhase();
+}
+
+function fireSpecialEvent(cardId, label) {
+  if (!CARDS[cardId] || !state.running) return;
+  [1, 2].forEach((id) => {
+    const p = state[`p${id}`];
+    if (!p.defeated) p.forcedCard = cardId;
+  });
+  addLog({ type: 'special_event', card: cardId, label: label || CARDS[cardId].name });
+  io.emit('specialEvent', { cardName: CARDS[cardId].name, label: label || CARDS[cardId].name });
+  broadcastState();
+}
+
+let autoEventTimers = [];
+function clearAutoEvents() {
+  autoEventTimers.forEach(clearTimeout);
+  autoEventTimers = [];
+}
+
+const EVENT_LABELS = { double: '이중반전 폭탄', audio: '청각 이중부정 기습', colorword: '색상단어 몰아치기', number: '숫자 반전 습격' };
+
+function scheduleAutoEvents(phase) {
+  clearAutoEvents();
+  const durMs = phase.durationSec * 1000;
+  const pool = phase.cardPool.filter((id) => CARDS[id].tier >= 2);
+  if (pool.length === 0) return;
+
+  const plan = phase.id === 'boss' ? 2 : (phase.id === 'act2' ? 1 : 0);
+  for (let i = 0; i < plan; i++) {
+    const windowStart = Math.floor((durMs / (plan + 1)) * (i + 0.4));
+    const windowEnd = Math.floor((durMs / (plan + 1)) * (i + 1.2));
+    const delay = windowStart + Math.random() * Math.max(1000, windowEnd - windowStart);
+    const timer = setTimeout(() => {
+      const cardId = pool[Math.floor(Math.random() * pool.length)];
+      fireSpecialEvent(cardId, EVENT_LABELS[cardId] || CARDS[cardId].name);
+    }, delay);
+    autoEventTimers.push(timer);
+  }
 }
 
 function enterPhase() {
@@ -104,6 +144,7 @@ function enterPhase() {
   state.phaseEndsAt = Date.now() + phase.durationSec * 1000;
   addLog({ type: 'phase_start', phase: phase.id });
   broadcastState();
+  scheduleAutoEvents(phase);
   [1, 2].forEach((id) => {
     const p = state[`p${id}`];
     if (!p.defeated) issueRound(id);
@@ -297,16 +338,6 @@ io.on('connection', (socket) => {
       if (!p || !CARDS[cardId]) return;
       p.forcedCard = cardId;
       addLog({ type: 'admin_force_card', player: playerId, card: cardId });
-    });
-    socket.on('admin:specialEvent', ({ cardId, label }) => {
-      if (!CARDS[cardId] || !state.running) return;
-      [1, 2].forEach((id) => {
-        const p = state[`p${id}`];
-        if (!p.defeated) p.forcedCard = cardId;
-      });
-      addLog({ type: 'special_event', card: cardId, label: label || CARDS[cardId].name });
-      io.emit('specialEvent', { cardName: CARDS[cardId].name, label: label || CARDS[cardId].name });
-      broadcastState();
     });
     return;
   }

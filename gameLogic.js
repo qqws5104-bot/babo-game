@@ -28,6 +28,8 @@ const CARDS = {
 
 const COLORS = ['빨강', '파랑', '초록', '노랑'];
 
+const COLOR_HEX = { 빨강: '#E24B4A', 파랑: '#378ADD', 초록: '#639922', 노랑: '#EF9F27' };
+
 function randCard(pool) {
   const id = pool[Math.floor(Math.random() * pool.length)];
   return CARDS[id];
@@ -42,6 +44,7 @@ function generateRound(cardId) {
   let excludeValue = null;
   let prompt = '';
   let bubble = null;
+  let wordColorHex = null;
 
   if (card.input === 'foot') {
     // 가위바위보 반전: 외친 것과 "다른" 아무 패나 내면 성공, 외친 것과 "똑같이" 내면 본능이 나온 것(실패)
@@ -59,7 +62,8 @@ function generateRound(cardId) {
   } else if (card.id === 'colorword') {
     const word = COLORS[Math.floor(Math.random() * 4)];
     const displayColor = COLORS[Math.floor(Math.random() * 4)];
-    prompt = `글자 "${word}" (색: ${displayColor})`;
+    prompt = word; // 클라이언트에서 displayColorHex로 실제 색을 입혀 렌더링
+    wordColorHex = COLOR_HEX[displayColor];
     options = shuffle([...COLORS]);
     correct = word; // 단어를 눌러야 함 (색 아님)
   } else if (card.id === 'number') {
@@ -79,11 +83,11 @@ function generateRound(cardId) {
     const dir = Math.random() < 0.5 ? '왼쪽' : '오른쪽';
     const released = Math.random() < 0.5;
     prompt = released ? `화면이 ${dir} (해제 신호 있음!)` : `화면이 ${dir}`;
-    options = ['왼쪽', '오른쪽'];
+    options = shuffle(['왼쪽', '오른쪽']); // 좌우반전과 동일하게 배치 순서 랜덤화
     correct = released ? dir : (dir === '왼쪽' ? '오른쪽' : '왼쪽');
   }
 
-  return { cardId: card.id, cardName: card.name, tier: card.tier, penalty: card.penalty, stackGain: card.stackGain, prompt, bubble, options, correct, correctMode, excludeValue, issuedAt: Date.now() };
+  return { cardId: card.id, cardName: card.name, tier: card.tier, penalty: card.penalty, stackGain: card.stackGain, prompt, bubble, wordColorHex, options, correct, correctMode, excludeValue, issuedAt: Date.now() };
 }
 
 function pickRandomSlots(count) {
