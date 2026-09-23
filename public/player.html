@@ -201,7 +201,9 @@
     if (!currentRound) return;
     const correct = currentRound.correctMode === 'exclude'
       ? String(value) !== String(currentRound.excludeValue)
-      : String(value) === String(currentRound.correct);
+      : currentRound.correctMode === 'excludeMulti'
+        ? !currentRound.excludeValues.map(String).includes(String(value))
+        : String(value) === String(currentRound.correct);
     const fb = document.getElementById('feedback');
     fb.textContent = correct ? '성공! 계속 위장 중' : '앗, 본능이 나와버렸다';
     fb.className = 'feedback' + (correct ? '' : ' bad');

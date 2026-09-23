@@ -9,7 +9,7 @@ const CONFIG = {
   interferePreviewMs: 1800, // "○○카드 도착!" 예고 후 유예시간
   roundTimeoutMs: 4000, // 한 라운드 응답 제한시간
   phases: [
-    { id: 'warmup', label: '워밍업', durationSec: 120, allowInterfere: false, cardPool: ['giboo'] },
+    { id: 'warmup', label: '워밍업', durationSec: 30, allowInterfere: false, cardPool: ['giboo', 'leftright', 'colorword', 'number', 'audio'] },
     { id: 'act1', label: '1막', durationSec: 300, allowInterfere: false, cardPool: ['giboo', 'leftright', 'colorword'] },
     { id: 'act2', label: '2막', durationSec: 360, allowInterfere: true, cardPool: ['giboo', 'leftright', 'colorword', 'number', 'audio'] },
     { id: 'boss', label: '보스전', durationSec: 300, allowInterfere: true, cardPool: ['giboo', 'leftright', 'colorword', 'number', 'audio', 'double'] },
@@ -26,9 +26,9 @@ const CARDS = {
   double: { id: 'double', name: '이중반전', tier: 4, penalty: 38, stackGain: 2, input: 'button2' },
 };
 
-const COLORS = ['빨강', '파랑', '초록', '노랑'];
+const COLORS = ['빨강', '파랑', '초록'];
 
-const COLOR_HEX = { 빨강: '#E24B4A', 파랑: '#378ADD', 초록: '#639922', 노랑: '#EF9F27' };
+const COLOR_HEX = { 빨강: '#E24B4A', 파랑: '#378ADD', 초록: '#639922' };
 
 function randCard(pool) {
   const id = pool[Math.floor(Math.random() * pool.length)];
@@ -40,8 +40,9 @@ function generateRound(cardId) {
   const card = CARDS[cardId];
   let options = [];
   let correct = null;
-  let correctMode = 'exact'; // 'exact' | 'exclude'
+  let correctMode = 'exact'; // 'exact' | 'exclude' | 'excludeMulti'
   let excludeValue = null;
+  let excludeValues = null;
   let prompt = '';
   let bubble = null;
   let wordColorHex = null;
@@ -60,12 +61,13 @@ function generateRound(cardId) {
     options = shuffle(['왼쪽', '오른쪽']); // 항상 하나씩, 화면 배치 순서만 랜덤
     correct = dir === '왼쪽' ? '오른쪽' : '왼쪽';
   } else if (card.id === 'colorword') {
-    const word = COLORS[Math.floor(Math.random() * 4)];
-    const displayColor = COLORS[Math.floor(Math.random() * 4)];
+    const word = COLORS[Math.floor(Math.random() * COLORS.length)];
+    const displayColor = COLORS[Math.floor(Math.random() * COLORS.length)];
     prompt = word; // 클라이언트에서 displayColorHex로 실제 색을 입혀 렌더링
     wordColorHex = COLOR_HEX[displayColor];
     options = shuffle([...COLORS]);
-    correct = word; // 단어를 눌러야 함 (색 아님)
+    correctMode = 'excludeMulti';
+    excludeValues = [...new Set([word, displayColor])]; // 단어의 의미와 실제 글자색, 둘 다 제외한 나머지가 정답
   } else if (card.id === 'number') {
     const shown = 1 + Math.floor(Math.random() * 4);
     prompt = `숫자 ${shown}`;
@@ -87,7 +89,7 @@ function generateRound(cardId) {
     correct = released ? dir : (dir === '왼쪽' ? '오른쪽' : '왼쪽');
   }
 
-  return { cardId: card.id, cardName: card.name, tier: card.tier, penalty: card.penalty, stackGain: card.stackGain, prompt, bubble, wordColorHex, options, correct, correctMode, excludeValue, issuedAt: Date.now() };
+  return { cardId: card.id, cardName: card.name, tier: card.tier, penalty: card.penalty, stackGain: card.stackGain, prompt, bubble, wordColorHex, options, correct, correctMode, excludeValue, excludeValues, issuedAt: Date.now() };
 }
 
 function pickRandomSlots(count) {

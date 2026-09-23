@@ -188,7 +188,9 @@ function resolveAnswer(id, answer) {
   const isCorrect = answer !== null && (
     round.correctMode === 'exclude'
       ? String(answer) !== String(round.excludeValue)
-      : String(answer) === String(round.correct)
+      : round.correctMode === 'excludeMulti'
+        ? !round.excludeValues.map(String).includes(String(answer))
+        : String(answer) === String(round.correct)
   );
   const phase = currentPhase();
   const isWarmup = phase && phase.id === 'warmup';
