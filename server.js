@@ -176,12 +176,7 @@ function issueRound(id) {
   p.currentRound = round;
   io.to(`player${id}`).emit('round', round);
   broadcastState();
-
-  clearTimeout(roundTimers[id]);
-  roundTimers[id] = setTimeout(() => {
-    // 시간 초과 = 실패 처리
-    resolveAnswer(id, null);
-  }, CONFIG.roundTimeoutMs);
+  // 시간제한 없음: 실제로 답을 누르기 전까지는 이 라운드가 그대로 유지됩니다.
 }
 
 function resolveAnswer(id, answer) {

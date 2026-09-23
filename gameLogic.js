@@ -18,12 +18,12 @@ const CONFIG = {
 
 // 카드 정의: 입력카드 5종 + 변형카드(double=이중반전, 보스전용)
 const CARDS = {
-  giboo: { id: 'giboo', name: '가위바위보 반전', tier: 1, penalty: 10, stackGain: 0.5, input: 'foot' },
-  leftright: { id: 'leftright', name: '좌우 반전', tier: 1, penalty: 10, stackGain: 0.5, input: 'button2' },
-  colorword: { id: 'colorword', name: '색상-단어 반전', tier: 2, penalty: 15, stackGain: 1, input: 'button4' },
-  number: { id: 'number', name: '숫자 반전', tier: 2, penalty: 15, stackGain: 1, input: 'button3' },
-  audio: { id: 'audio', name: '청각 이중부정', tier: 3, penalty: 20, stackGain: 1.5, input: 'button2' },
-  double: { id: 'double', name: '이중반전', tier: 4, penalty: 25, stackGain: 2, input: 'button2' },
+  giboo: { id: 'giboo', name: '가위바위보 반전', tier: 1, penalty: 18, stackGain: 0.5, input: 'foot' },
+  leftright: { id: 'leftright', name: '좌우 반전', tier: 1, penalty: 18, stackGain: 0.5, input: 'button2' },
+  colorword: { id: 'colorword', name: '색상-단어 반전', tier: 2, penalty: 24, stackGain: 1, input: 'button4' },
+  number: { id: 'number', name: '숫자 반전', tier: 2, penalty: 24, stackGain: 1, input: 'button3' },
+  audio: { id: 'audio', name: '청각 이중부정', tier: 3, penalty: 30, stackGain: 1.5, input: 'button2' },
+  double: { id: 'double', name: '이중반전', tier: 4, penalty: 38, stackGain: 2, input: 'button2' },
 };
 
 const COLORS = ['빨강', '파랑', '초록', '노랑'];
