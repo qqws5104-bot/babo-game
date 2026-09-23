@@ -150,6 +150,17 @@ function resolveAnswer(id, answer) {
   clearTimeout(roundTimers[id]);
 
   const isCorrect = answer !== null && String(answer) === String(round.correct);
+  const phase = currentPhase();
+  const isWarmup = phase && phase.id === 'warmup';
+
+  if (isWarmup) {
+    // 워밍업: 게이지/스택/콤보 전부 미적용, 룰 습득용 연습 라운드
+    addLog({ type: isCorrect ? 'warmup_success' : 'warmup_fail', player: id, card: round.cardId });
+    p.currentRound = null;
+    broadcastState();
+    nextRoundTimers[id] = setTimeout(() => issueRound(id), 700);
+    return;
+  }
   const wasForced = p.forcedByOpponent;
   const opponentId = id === 1 ? 2 : 1;
   const opp = state[`p${opponentId}`];

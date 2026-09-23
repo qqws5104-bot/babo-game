@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>위장 게이지 대결</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css" />
 <style>
   :root { --bg: #fdfaf3; --card: #ffffff; --accent: #0f6e56; --danger: #a32d2d; --warn: #854f0b; }
   * { box-sizing: border-box; }
@@ -16,20 +17,26 @@
   body.warning { background: #fceceb; animation: flash 0.6s infinite alternate; }
   @keyframes flash { from { box-shadow: inset 0 0 0 6px #f09595; } to { box-shadow: inset 0 0 0 6px transparent; } }
   body.office { background: #e9eaec; }
-  .topbar { width: 100%; max-width: 480px; display: flex; justify-content: space-between; font-size: 13px; color: #5f5e5a; margin-bottom: 10px; }
-  .panel { width: 100%; max-width: 480px; background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
-  .gauge-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 600; }
-  .gauge-bar { height: 16px; background: #eee; border-radius: 999px; overflow: hidden; }
-  .gauge-fill { height: 100%; background: var(--accent); transition: width .3s; }
+  .topbar { width: 100%; max-width: 480px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #5f5e5a; margin-bottom: 12px; padding: 0 4px; }
+  .topbar span { display: flex; align-items: center; gap: 5px; }
+  .panel { width: 100%; max-width: 480px; background: var(--card); border-radius: 18px; padding: 18px; margin-bottom: 14px; border: 0.5px solid #eee6d8; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .gauge-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 700; font-size: 15px; }
+  .gauge-bar { height: 18px; background: #f1efe8; border-radius: 999px; overflow: hidden; border: 0.5px solid #e4ddcf; }
+  .gauge-fill { height: 100%; background: var(--accent); transition: width .3s; border-radius: 999px; }
   .gauge-fill.low { background: var(--danger); }
-  .oppo-badge { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 999px; background: #f4c0d1; color: #72243e; margin-top: 6px; }
-  .prompt { text-align: center; font-size: 22px; font-weight: 700; margin: 18px 0; min-height: 60px; }
+  .oppo-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 999px; background: #fbeaf0; color: #72243e; margin-top: 8px; }
+  .card-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 999px; margin-bottom: 12px; }
+  .badge-tier1 { background: #eaf3de; color: #27500a; }
+  .badge-tier2 { background: #faeeda; color: #633806; }
+  .badge-tier3 { background: #faece7; color: #712b13; }
+  .badge-tier4 { background: #fbeaf0; color: #4b1528; }
+  .prompt { text-align: center; font-size: 23px; font-weight: 700; margin: 6px 0 20px; min-height: 60px; }
   .options { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .opt-btn { min-width: 72px; height: 72px; border-radius: 14px; border: 2px solid #ddd; background: #fff; font-size: 16px; font-weight: 600; cursor: pointer; }
-  .opt-btn:active { transform: scale(0.95); }
-  .foot { background: #e1f5ee; border-color: #5dcaa5; }
+  .opt-btn { min-width: 74px; height: 74px; border-radius: 16px; border: 2px solid #e4ddcf; background: #fff; font-size: 16px; font-weight: 700; cursor: pointer; transition: transform .1s; }
+  .opt-btn:active { transform: scale(0.94); }
+  .foot { background: #e1f5ee; border-color: #5dcaa5; color: #085041; }
   .actions { display: flex; gap: 10px; width: 100%; max-width: 480px; }
-  .btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .btn { flex: 1; padding: 15px; border-radius: 14px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
   .btn-throw { background: var(--accent); color: #fff; }
   .btn-defend { background: var(--danger); color: #fff; }
   .btn:disabled { opacity: .4; cursor: not-allowed; }
@@ -46,8 +53,8 @@
 </head>
 <body>
   <div class="topbar">
-    <span id="phaseLabel">대기중</span>
-    <span id="stackLabel">간섭스택 0</span>
+    <span><i class="ti ti-clock"></i> <span id="phaseLabel">대기중</span></span>
+    <span><i class="ti ti-bolt"></i> <span id="stackLabel">간섭스택 0</span></span>
   </div>
 
   <div class="panel">
@@ -57,18 +64,19 @@
 
   <div class="panel">
     <div class="gauge-row" style="margin-bottom:2px;"><span>상대</span><span id="oppoState">플레이 중</span></div>
-    <span class="oppo-badge hidden" id="oppoWarning"><i>⚠</i> 상대 경고모드</span>
+    <span class="oppo-badge hidden" id="oppoWarning"><i class="ti ti-flame"></i> 상대 경고모드</span>
   </div>
 
   <div class="panel">
+    <div id="cardBadge" class="card-badge hidden"></div>
     <div class="prompt" id="prompt">대기 중...</div>
     <div class="options" id="options"></div>
     <div class="feedback" id="feedback"></div>
   </div>
 
   <div class="actions">
-    <button class="btn btn-throw" id="throwBtn" disabled>방해 카드 던지기</button>
-    <button class="btn btn-defend hidden" id="defendBtn">방어!</button>
+    <button class="btn btn-throw" id="throwBtn" disabled><i class="ti ti-send"></i> 방해 카드 던지기</button>
+    <button class="btn btn-defend hidden" id="defendBtn"><i class="ti ti-shield"></i> 방어!</button>
   </div>
 
   <div class="result-screen hidden" id="resultScreen">
@@ -92,7 +100,13 @@
     renderRound(round);
   });
 
+  const TIER_ICON = { 1: 'ti-mood-smile', 2: 'ti-flame', 3: 'ti-bolt', 4: 'ti-skull' };
+
   function renderRound(round) {
+    const badge = document.getElementById('cardBadge');
+    badge.classList.remove('hidden');
+    badge.className = 'card-badge badge-tier' + round.tier;
+    badge.innerHTML = `<i class="ti ${TIER_ICON[round.tier] || 'ti-bolt'}"></i> ${round.cardName}`;
     document.getElementById('prompt').textContent = round.prompt;
     const optsEl = document.getElementById('options');
     optsEl.innerHTML = '';
