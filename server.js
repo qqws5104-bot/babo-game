@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-const { CONFIG, CARDS, generateRound, createPlayerState } = require('./gameLogic');
+const { CONFIG, CARDS, COLORS, generateRound, createPlayerState } = require('./gameLogic');
 
 const app = express();
 const server = http.createServer(app);
@@ -61,6 +61,7 @@ function sanitizePlayer(p, full) {
     combo: p.combo,
     stack: p.stack,
     hasForcedCard: !!p.forcedCard,
+    isTrapped: !!p.trapColor,
   };
   return base;
 }
@@ -87,6 +88,7 @@ function clearAllTimers() {
   });
   clearTimeout(phaseTimer);
   clearAutoEvents();
+  clearAfkTimers();
 }
 
 function startGame() {
@@ -109,6 +111,39 @@ function fireSpecialEvent(cardId, label) {
 }
 
 let autoEventTimers = [];
+const AFK_TIMEOUT_MS = 20000;
+const AFK_PENALTY = 15;
+let afkTimers = { 1: null, 2: null };
+
+function clearAfkTimers() {
+  clearTimeout(afkTimers[1]);
+  clearTimeout(afkTimers[2]);
+  afkTimers = { 1: null, 2: null };
+}
+
+function scheduleAfk(id) {
+  clearTimeout(afkTimers[id]);
+  const phase = currentPhase();
+  if (!state.running || !phase || phase.id === 'warmup') return;
+  const p = state[`p${id}`];
+  if (!p || p.defeated) return;
+  afkTimers[id] = setTimeout(() => applyAfkPenalty(id), AFK_TIMEOUT_MS);
+}
+
+function applyAfkPenalty(id) {
+  const p = state[`p${id}`];
+  if (!p || p.defeated || !state.running) return;
+  p.gauge -= AFK_PENALTY;
+  addLog({ type: 'afk_penalty', player: id, gauge: p.gauge });
+  if (p.gauge <= 0) {
+    handleDefeat(id);
+    return;
+  }
+  if (p.gauge <= CONFIG.warningThreshold) p.warning = true;
+  broadcastState();
+  scheduleAfk(id); // 계속 방치하면 20초마다 반복 감점
+}
+
 function clearAutoEvents() {
   autoEventTimers.forEach(clearTimeout);
   autoEventTimers = [];
@@ -158,7 +193,7 @@ function enterPhase() {
 
 function issueRound(id) {
   const p = state[`p${id}`];
-  if (p.defeated || !state.running) return;
+  if (p.defeated || !state.running || p.trapColor) return;
   const phase = currentPhase();
   if (!phase) return;
 
@@ -176,6 +211,7 @@ function issueRound(id) {
   p.currentRound = round;
   io.to(`player${id}`).emit('round', round);
   broadcastState();
+  scheduleAfk(id);
   // 시간제한 없음: 실제로 답을 누르기 전까지는 이 라운드가 그대로 유지됩니다.
 }
 
@@ -184,6 +220,7 @@ function resolveAnswer(id, answer) {
   if (!p.currentRound || p.defeated) return;
   const round = p.currentRound;
   clearTimeout(roundTimers[id]);
+  scheduleAfk(id);
 
   const isCorrect = answer !== null && (
     round.correctMode === 'exclude'
@@ -245,6 +282,7 @@ function handleDefeat(id) {
   const p = state[`p${id}`];
   p.defeated = true;
   p.currentRound = null;
+  clearTimeout(afkTimers[id]);
   const winnerId = id === 1 ? 2 : 1;
   addLog({ type: 'defeat', player: id });
   io.to(`player${id}`).emit('defeated');
@@ -277,6 +315,7 @@ function endGame() {
 function throwInterference(fromId) {
   const p = state[`p${fromId}`];
   if (p.stack < 1 || p.defeated) return;
+  scheduleAfk(fromId);
   const toId = fromId === 1 ? 2 : 1;
   const opp = state[`p${toId}`];
   if (opp.defeated) return;
@@ -291,13 +330,45 @@ function throwInterference(fromId) {
   broadcastState();
 
   const deadline = setTimeout(() => {
-    opp.forcedCard = cardId;
+    if (opp.defeated) return;
+    startTrap(toId);
   }, CONFIG.interferePreviewMs);
+}
+
+function startTrap(id) {
+  const p = state[`p${id}`];
+  p.currentRound = null; // 진행 중이던 라운드는 취소, 함정부터 탈출해야 함
+  p.trapColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+  p.trapProgress = 0;
+  p.trapTarget = 30; // 연타 필요 횟수
+  addLog({ type: 'trap_start', player: id, color: p.trapColor });
+  io.to(`player${id}`).emit('trapped', { color: p.trapColor, target: p.trapTarget });
+  broadcastState();
+  scheduleAfk(id);
+}
+
+function mashTrap(id, colorPressed) {
+  const p = state[`p${id}`];
+  if (!p.trapColor) return;
+  if (colorPressed === p.trapColor) return; // 함정 색과 같은 걸 누르면 무효 (진행 없음)
+  p.trapProgress = Math.min(p.trapTarget, p.trapProgress + 1);
+  scheduleAfk(id);
+  io.to(`player${id}`).emit('trapProgress', { progress: p.trapProgress, target: p.trapTarget });
+  if (p.trapProgress >= p.trapTarget) {
+    addLog({ type: 'trap_cleared', player: id });
+    p.trapColor = null;
+    p.trapProgress = 0;
+    p.trapTarget = 0;
+    io.to(`player${id}`).emit('trapFreed');
+    broadcastState();
+    if (!p.defeated && state.running) issueRound(id);
+  }
 }
 
 function defend(id) {
   const p = state[`p${id}`];
   if (p.stack < 1) return;
+  scheduleAfk(id);
   p.stack -= 1;
   p.forcedCard = null; // 무효화
   addLog({ type: 'defend', player: id });
@@ -348,6 +419,7 @@ io.on('connection', (socket) => {
   socket.on('answer', (answer) => resolveAnswer(id, answer));
   socket.on('throwInterference', () => throwInterference(id));
   socket.on('defend', () => defend(id));
+  socket.on('mash', (color) => mashTrap(id, color));
 
   socket.on('disconnect', () => {
     if (players[id] === socket.id) players[id] = null;

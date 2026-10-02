@@ -9,10 +9,10 @@ const CONFIG = {
   interferePreviewMs: 1800, // "○○카드 도착!" 예고 후 유예시간
   roundTimeoutMs: 4000, // 한 라운드 응답 제한시간
   phases: [
-    { id: 'warmup', label: '워밍업', durationSec: 30, allowInterfere: false, cardPool: ['giboo', 'leftright', 'colorword', 'number', 'audio'] },
+    { id: 'warmup', label: '워밍업', durationSec: 30, allowInterfere: false, cardPool: ['giboo'] },
     { id: 'act1', label: '1막', durationSec: 300, allowInterfere: false, cardPool: ['giboo', 'leftright', 'colorword'] },
-    { id: 'act2', label: '2막', durationSec: 360, allowInterfere: true, cardPool: ['giboo', 'leftright', 'colorword', 'number', 'audio'] },
-    { id: 'boss', label: '보스전', durationSec: 300, allowInterfere: true, cardPool: ['giboo', 'leftright', 'colorword', 'number', 'audio', 'double'] },
+    { id: 'act2', label: '2막', durationSec: 360, allowInterfere: true, cardPool: ['giboo', 'leftright', 'colorword', 'number', 'audio', 'blocked4'] },
+    { id: 'boss', label: '보스전', durationSec: 300, allowInterfere: true, cardPool: ['giboo', 'leftright', 'colorword', 'number', 'audio', 'blocked4', 'double'] },
   ],
 };
 
@@ -21,14 +21,22 @@ const CARDS = {
   giboo: { id: 'giboo', name: '가위바위보 반전', tier: 1, penalty: 18, stackGain: 0.5, input: 'foot' },
   leftright: { id: 'leftright', name: '좌우 반전', tier: 1, penalty: 18, stackGain: 0.5, input: 'button2' },
   colorword: { id: 'colorword', name: '색상-단어 반전', tier: 2, penalty: 24, stackGain: 1, input: 'button4' },
-  number: { id: 'number', name: '숫자 반전', tier: 2, penalty: 24, stackGain: 1, input: 'button3' },
+  number: { id: 'number', name: '숫자 반전', tier: 2, penalty: 24, stackGain: 1, input: 'button4' },
   audio: { id: 'audio', name: '청각 이중부정', tier: 3, penalty: 30, stackGain: 1.5, input: 'button2' },
   double: { id: 'double', name: '이중반전', tier: 4, penalty: 38, stackGain: 2, input: 'button2' },
+  blocked4: { id: 'blocked4', name: '방향 막힘', tier: 3, penalty: 30, stackGain: 1.5, input: 'button4' },
 };
 
 const COLORS = ['빨강', '파랑', '초록'];
 
 const COLOR_HEX = { 빨강: '#E24B4A', 파랑: '#378ADD', 초록: '#639922' };
+
+const NUM_FORMS = {
+  1: { digit: '1', kr: '일', en: 'one', hanja: '一' },
+  2: { digit: '2', kr: '이', en: 'two', hanja: '二' },
+  3: { digit: '3', kr: '삼', en: 'three', hanja: '三' },
+  4: { digit: '4', kr: '사', en: 'four', hanja: '四' },
+};
 
 function randCard(pool) {
   const id = pool[Math.floor(Math.random() * pool.length)];
@@ -43,6 +51,9 @@ function generateRound(cardId) {
   let correctMode = 'exact'; // 'exact' | 'exclude' | 'excludeMulti'
   let excludeValue = null;
   let excludeValues = null;
+  let arrowDir = null;
+  let released = null;
+  let blockedDir = null;
   let prompt = '';
   let bubble = null;
   let wordColorHex = null;
@@ -58,6 +69,7 @@ function generateRound(cardId) {
   } else if (card.id === 'leftright') {
     const dir = Math.random() < 0.5 ? '왼쪽' : '오른쪽';
     prompt = `화면이 ${dir}을 가리켜요`;
+    arrowDir = dir;
     options = shuffle(['왼쪽', '오른쪽']); // 항상 하나씩, 화면 배치 순서만 랜덤
     correct = dir === '왼쪽' ? '오른쪽' : '왼쪽';
   } else if (card.id === 'colorword') {
@@ -69,12 +81,16 @@ function generateRound(cardId) {
     correctMode = 'excludeMulti';
     excludeValues = [...new Set([word, displayColor])]; // 단어의 의미와 실제 글자색, 둘 다 제외한 나머지가 정답
   } else if (card.id === 'number') {
-    const shown = 1 + Math.floor(Math.random() * 4);
-    prompt = `숫자 ${shown}`;
-    const target = (shown % 4) + 1;
-    options = shuffle([1, 2, 3, 4].filter((n) => Math.random() < 0.75 || n === target).slice(0, 3));
-    if (!options.includes(target)) options[0] = target;
-    correct = target; // 표시값+1(4는 1로 순환)
+    const nums = [1, 2, 3, 4];
+    const target = nums[Math.floor(Math.random() * nums.length)];
+    prompt = `숫자 ${target}`;
+    const targetForms = shuffle(Object.values(NUM_FORMS[target])).slice(0, 3); // 같은 숫자를 위장한 함정 3개
+    const otherNums = nums.filter((n) => n !== target);
+    const otherNum = otherNums[Math.floor(Math.random() * otherNums.length)];
+    const otherForms = Object.values(NUM_FORMS[otherNum]);
+    const unrelated = otherForms[Math.floor(Math.random() * otherForms.length)]; // 아예 무관한 숫자의 표기 1개
+    options = shuffle([...targetForms, unrelated]);
+    correct = unrelated; // 무관한 것을 골라야 정답
   } else if (card.id === 'audio') {
     const positive = Math.random() < 0.5;
     prompt = positive ? '음성: "누르세요"' : '음성: "누르지 마세요"';
@@ -83,13 +99,20 @@ function generateRound(cardId) {
   } else if (card.id === 'double') {
     // 이중반전: 기본 좌우반전 위에 "해제" 신호가 랜덤하게 얹힘
     const dir = Math.random() < 0.5 ? '왼쪽' : '오른쪽';
-    const released = Math.random() < 0.5;
+    released = Math.random() < 0.5;
     prompt = released ? `화면이 ${dir} (해제 신호 있음!)` : `화면이 ${dir}`;
+    arrowDir = dir;
     options = shuffle(['왼쪽', '오른쪽']); // 좌우반전과 동일하게 배치 순서 랜덤화
     correct = released ? dir : (dir === '왼쪽' ? '오른쪽' : '왼쪽');
+  } else if (card.id === 'blocked4') {
+    const DIRS = ['위', '아래', '왼쪽', '오른쪽'];
+    blockedDir = DIRS[Math.floor(Math.random() * DIRS.length)];
+    prompt = blockedDir;
+    options = shuffle([...DIRS]);
+    correct = blockedDir; // 반전 아님: 막힌 방향을 그대로 골라야 정답
   }
 
-  return { cardId: card.id, cardName: card.name, tier: card.tier, penalty: card.penalty, stackGain: card.stackGain, prompt, bubble, wordColorHex, options, correct, correctMode, excludeValue, excludeValues, issuedAt: Date.now() };
+  return { cardId: card.id, cardName: card.name, tier: card.tier, penalty: card.penalty, stackGain: card.stackGain, prompt, bubble, wordColorHex, arrowDir, released, blockedDir, options, correct, correctMode, excludeValue, excludeValues, issuedAt: Date.now() };
 }
 
 function pickRandomSlots(count) {
@@ -115,7 +138,10 @@ function createPlayerState() {
     defeated: false,
     currentRound: null,
     incoming: null, // 상대가 던진 카드 예고 중이면 {cardName, cardId, deadline}
+    trapColor: null, // 무방비로 맞았을 때: 화면을 뒤덮는 색
+    trapProgress: 0,
+    trapTarget: 0,
   };
 }
 
-module.exports = { CONFIG, CARDS, randCard, generateRound, createPlayerState };
+module.exports = { CONFIG, CARDS, COLORS, COLOR_HEX, randCard, generateRound, createPlayerState };

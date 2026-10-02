@@ -27,16 +27,16 @@
   .topbar span { display: flex; align-items: center; gap: 5px; }
   .panel { width: 100%; max-width: 480px; background: var(--card); border-radius: 18px; padding: 18px; margin-bottom: 14px; border: 3px solid #2c2c2a; box-shadow: 0 4px 0 #2c2c2a, 0 6px 14px rgba(0,0,0,0.35); }
   .gauge-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 700; font-size: 17px; }
-  .board-track { position: relative; display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .board-track { position: relative; display: flex; align-items: center; gap: 10px; padding: 6px 0; }
   .board-end { font-size: 22px; flex-shrink: 0; }
   .board-end-office { color: #444441; }
   .board-end-beach { color: #3b6d11; }
-  .board-tiles { flex: 1; display: flex; gap: 4px; position: relative; }
-  .board-tile { flex: 1; height: 30px; background: #1a1633; border: 2px solid #2c2c2a; border-radius: 6px; position: relative; }
-  .board-tile.filled { background: linear-gradient(180deg, #4ce0a3, #0f6e56); }
-  .board-tile.trap { box-shadow: 0 0 0 3px #ffd43b inset; }
-  .board-tile.trap::after { content: "⚠"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-  .board-token { position: absolute; top: -6px; width: 30px; height: 30px; border-radius: 50%; background: #fff3d6; border: 3px solid #2c2c2a; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: left .35s ease; z-index: 2; }
+  .gauge-bar-outer { flex: 1; position: relative; height: 26px; background: #1a1633; border-radius: 999px; overflow: visible; border: 2px solid #2c2c2a; }
+  .gauge-bar-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 999px; background: linear-gradient(180deg, #4ce0a3, #0f6e56); transition: width .35s ease; overflow: hidden; }
+  .gauge-bar-fill::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 10px, rgba(0,0,0,0.12) 10px 12px); }
+  .gauge-bar-fill.low { background: linear-gradient(180deg, #ff8787, #c62d3a); }
+  .board-token { position: absolute; top: -8px; width: 30px; height: 30px; border-radius: 50%; background: #fff3d6; border: 3px solid #2c2c2a; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: left .35s ease; z-index: 2; }
+  .trap-warning { position: absolute; top: -26px; font-size: 20px; color: #d84f3e; transition: left .35s ease; z-index: 2; }
   .oppo-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; padding: 5px 14px; border-radius: 999px; background: #fbeaf0; color: #72243e; margin-top: 8px; border: 2px solid #72243e; }
   .card-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; padding: 5px 14px; border-radius: 999px; margin-bottom: 12px; border: 2px solid currentColor; }
   .badge-tier1 { background: #eaf3de; color: #27500a; }
@@ -86,6 +86,11 @@
   .opt-emoji { display: flex; justify-content: center; margin-bottom: 4px; }
   .opt-emoji img { display: block; width: 46px; height: 46px; object-fit: contain; }
   .opt-key { font-size: 10px; color: var(--text-muted, #999); display: block; margin-top: 2px; }
+  .trap-screen { position: fixed; inset: 0; z-index: 15; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; color: #1a1a1a; transition: background-color .25s ease; }
+  .trap-progress { width: 280px; height: 20px; background: rgba(0,0,0,0.15); border-radius: 999px; overflow: hidden; border: 2px solid rgba(0,0,0,0.3); }
+  .trap-progress-fill { height: 100%; background: #1f1b38; width: 0%; transition: width .15s ease; }
+  .trap-btn { width: 100px; height: 100px; border-radius: 20px; border: 3px solid #2c2c2a; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 0 #2c2c2a; }
+  .trap-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #2c2c2a; }
   .feedback.bad { color: var(--danger); }
   .feedback { font-family: 'Jua', sans-serif; }
   h2, .card-badge, .oppo-badge { font-family: 'Jua', sans-serif; }
@@ -102,8 +107,10 @@
     <div class="gauge-row"><span>내 위장 게이지</span><span id="gaugeNum">100</span></div>
     <div class="board-track" id="boardTrack">
       <i class="ti ti-briefcase board-end board-end-office"></i>
-      <div class="board-tiles" id="boardTiles">
+      <div class="gauge-bar-outer" id="gaugeBarOuter">
+        <div class="gauge-bar-fill" id="gaugeBarFill" style="width:100%"></div>
         <div class="board-token" id="boardToken"><i class="ti ti-run"></i></div>
+        <i class="ti ti-alert-triangle trap-warning hidden" id="trapWarningIcon"></i>
       </div>
       <i class="ti ti-beach board-end board-end-beach"></i>
     </div>
@@ -132,6 +139,14 @@
     <div class="stamp" id="resultStamp"></div>
   </div>
 
+  <div class="trap-screen hidden" id="trapScreen">
+    <p style="font-size:22px; font-weight:800; margin-bottom:6px;">상대방이 방해공작을 펼쳤다!</p>
+    <p style="font-size:16px; font-weight:600; margin-bottom:14px;">다른 색을 연타해서 풀어내세요</p>
+    <div class="trap-progress"><div class="trap-progress-fill" id="trapProgressFill"></div></div>
+    <p style="font-size:16px; margin:10px 0 20px;"><span id="trapProgressNum">0</span> / <span id="trapTargetNum">30</span></p>
+    <div class="options" id="trapOptions"></div>
+  </div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
   const params = new URLSearchParams(location.search);
@@ -154,6 +169,8 @@
     바위: '/assets/bawi.png',
     보: '/assets/bo.png',
   };
+  const ARROW_ICON = { 왼쪽: 'ti-arrow-left', 오른쪽: 'ti-arrow-right', 위: 'ti-arrow-up', 아래: 'ti-arrow-down' };
+  const COLOR_HEX_MAP = { 빨강: '#E24B4A', 파랑: '#378ADD', 초록: '#639922' };
   let activeButtons = [];
 
   function renderRound(round) {
@@ -164,8 +181,21 @@
 
     const promptEl = document.getElementById('prompt');
     const isFoot = round.cardId === 'giboo';
+    const isArrow = round.cardId === 'leftright' || round.cardId === 'double';
+    const isBlocked = round.cardId === 'blocked4';
     if (isFoot) {
       promptEl.innerHTML = `<div class="bubble-wrap"><span class="speech-bubble">${round.bubble}!</span></div>`;
+    } else if (isBlocked && round.blockedDir) {
+      promptEl.innerHTML = `<div style="position:relative; display:inline-block;">
+          <i class="ti ${ARROW_ICON[round.blockedDir]}" style="font-size:64px; color:#999;"></i>
+          <i class="ti ti-ban" style="position:absolute; inset:0; font-size:76px; color:#d84f3e; display:flex; align-items:center; justify-content:center; margin:-6px;"></i>
+        </div>
+        <div style="font-size:14px; color:#5c5770; margin-top:6px;">이 방향은 막혔습니다</div>`;
+    } else if (isArrow && round.arrowDir) {
+      const releaseTag = round.cardId === 'double' && round.released
+        ? '<div style="font-size:16px; color:#d84f3e; font-weight:700; margin-top:8px;"><i class="ti ti-lock-open"></i> 해제 신호!</div>'
+        : '';
+      promptEl.innerHTML = `<div style="text-align:center;"><i class="ti ${ARROW_ICON[round.arrowDir]}" style="font-size:64px;"></i>${releaseTag}</div>`;
     } else if (round.cardId === 'colorword' && round.wordColorHex) {
       promptEl.innerHTML = `<span style="color:${round.wordColorHex}; font-weight:700;">${round.prompt}</span>`;
     } else {
@@ -181,6 +211,8 @@
       btn.className = 'opt-btn' + (isFoot ? ' foot' : '');
       if (isFoot && HAND_IMG[label]) {
         btn.innerHTML = `<span class="opt-emoji"><img src="${HAND_IMG[label]}" alt="${label}" /></span>${label}<span class="opt-key">${idx + 1}</span>`;
+      } else if ((isArrow || isBlocked) && ARROW_ICON[label]) {
+        btn.innerHTML = `<i class="ti ${ARROW_ICON[label]}" style="font-size:28px; display:block; margin-bottom:2px;"></i>${label}<span class="opt-key">${idx + 1}</span>`;
       } else {
         btn.innerHTML = `${label}<span class="opt-key">${idx + 1}</span>`;
       }
@@ -217,16 +249,6 @@
   socket.on('publicState', (s) => updateUI(s));
   socket.on('state', (s) => updateUI(s)); // admin에서도 재사용 가능하도록
 
-  const TILE_COUNT = 10;
-  (function initBoard() {
-    const tilesEl = document.getElementById('boardTiles');
-    for (let i = 0; i < TILE_COUNT; i++) {
-      const t = document.createElement('div');
-      t.className = 'board-tile';
-      tilesEl.appendChild(t);
-    }
-  })();
-
   function updateUI(s) {
     document.getElementById('phaseLabel').textContent = s.phaseLabel || '대기중';
     const me = myId === 1 ? s.p1 : s.p2;
@@ -234,15 +256,15 @@
     if (!me) return;
 
     document.getElementById('gaugeNum').textContent = Math.round(me.gauge);
-    const filledCount = Math.round((me.gauge / 100) * TILE_COUNT);
-    const tiles = document.querySelectorAll('#boardTiles .board-tile');
-    tiles.forEach((t, i) => {
-      t.classList.toggle('filled', i < filledCount);
-      t.classList.toggle('trap', me.hasForcedCard && i === filledCount);
-    });
+    const pct = Math.max(0, Math.min(100, me.gauge));
+    const fill = document.getElementById('gaugeBarFill');
+    fill.style.width = pct + '%';
+    fill.classList.toggle('low', pct <= 30);
     const token = document.getElementById('boardToken');
-    const pct = (filledCount / TILE_COUNT) * 100;
     token.style.left = `calc(${pct}% - 15px)`;
+    const trapIcon = document.getElementById('trapWarningIcon');
+    trapIcon.classList.toggle('hidden', !me.hasForcedCard);
+    trapIcon.style.left = `calc(${pct}% - 10px)`;
     document.body.classList.toggle('warning', me.warning && !me.defeated);
 
     document.getElementById('stackLabel').textContent = '간섭스택 ' + Math.floor(me.stack);
@@ -279,6 +301,46 @@
     document.body.appendChild(bar);
     document.getElementById('defendBtn').classList.remove('hidden');
     setTimeout(() => { bar.remove(); document.getElementById('defendBtn').classList.add('hidden'); }, previewMs);
+  });
+
+  function lightenHex(hex, fraction) {
+    const n = parseInt(hex.slice(1), 16);
+    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    const mix = (c) => Math.round(c + (255 - c) * fraction);
+    return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+  }
+
+  let trapColor = null;
+  socket.on('trapped', ({ color, target }) => {
+    trapColor = color;
+    const screen = document.getElementById('trapScreen');
+    screen.classList.remove('hidden');
+    screen.style.backgroundColor = COLOR_HEX_MAP[color] || '#999';
+    document.getElementById('trapProgressNum').textContent = 0;
+    document.getElementById('trapTargetNum').textContent = target;
+    document.getElementById('trapProgressFill').style.width = '0%';
+    const optsEl = document.getElementById('trapOptions');
+    optsEl.innerHTML = '';
+    Object.keys(COLOR_HEX_MAP).filter((c) => c !== color).forEach((c) => {
+      const btn = document.createElement('button');
+      btn.className = 'trap-btn';
+      btn.textContent = c;
+      btn.style.background = COLOR_HEX_MAP[c];
+      btn.onclick = () => socket.emit('mash', c);
+      optsEl.appendChild(btn);
+    });
+  });
+
+  socket.on('trapProgress', ({ progress, target }) => {
+    document.getElementById('trapProgressNum').textContent = progress;
+    document.getElementById('trapProgressFill').style.width = (progress / target * 100) + '%';
+    const screen = document.getElementById('trapScreen');
+    screen.style.backgroundColor = lightenHex(COLOR_HEX_MAP[trapColor] || '#999999', (progress / target) * 0.85);
+  });
+
+  socket.on('trapFreed', () => {
+    document.getElementById('trapScreen').classList.add('hidden');
+    trapColor = null;
   });
 
   socket.on('specialEvent', ({ cardName, label }) => {
