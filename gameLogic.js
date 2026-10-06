@@ -35,7 +35,7 @@ const CONFIG = {
   phases: [
     { id: 'warmup', label: '워밍업', durationSec: 30, cardPool: ['giboo'], hint: '외친 것이 아닌 걸 골라요 (점수 없음)' },
     { id: 'b0', label: '쉬는 시간', durationSec: 5, isBreak: true, cardPool: [] },
-    { id: 'p1', label: '1교시 국어', subject: '국어', durationSec: 150, cardPool: ['korean'], hint: '글자색과 이름이 다른 하나를 찾아요' },
+    { id: 'p1', label: '1교시 국어', subject: '국어', durationSec: 150, cardPool: ['korean'], hint: '글자의 뜻도 색도 아닌 색을 찾아요 (예: 초록이 빨강 글씨면 → 파랑)' },
     { id: 'b1', label: '쉬는 시간', durationSec: 5, isBreak: true, cardPool: [] },
     { id: 'p2', label: '2교시 영어', subject: '영어', durationSec: 150, cardPool: ['english'], hint: '철자가 틀린 단어 하나를 찾아요 · 선생님이 순찰하면 손 떼기!', patrolCount: 1 },
     { id: 'b2', label: '쉬는 시간', durationSec: 5, isBreak: true, cardPool: [] },
@@ -209,11 +209,14 @@ function generateRound(cardId) {
   }
 
   if (cardId === 'korean') {
-    const matched = COLORS.map((c) => ({ label: c, type: 'colorword', color: COLOR_HEX[c], desc: `${c}(글자색: ${c})`, right: true }));
-    const name = pick(COLORS);
-    const color = pick(COLORS.filter((c) => c !== name));
-    const odd = { label: name, type: 'colorword', color: COLOR_HEX[color], desc: `${name}(글자색: ${color})`, right: false };
-    return buildRound(card, { stem: '글자색과 이름이 같은 것은?', items: [...matched, odd] });
+    // 예: "초록"이라는 글자가 빨간색으로 보임 → 글자의 뜻(초록)과 글자색(빨강)이 정답 보기, 나머지(파랑)가 오답 = 안전
+    const word = pick(COLORS);
+    const color = pick(COLORS.filter((c) => c !== word)); // 뜻과 색은 항상 다르게 → 오답이 정확히 하나
+    return buildRound(card, {
+      stem: '이 글자의 뜻 또는 글자색은?',
+      visual: { type: 'colorword', text: word, color: COLOR_HEX[color], colorName: color },
+      items: COLORS.map((c) => ({ label: c, type: 'text', right: c === word || c === color })),
+    });
   }
 
   if (cardId === 'english') {

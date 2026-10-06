@@ -176,6 +176,7 @@ body.office { background: #cdd3df; }
 .card-badge { border: 3px solid var(--ink) !important; color: var(--ink) !important; box-shadow: 0 3px 0 var(--ink); }
 .badge-tier1 { background: #b6f24a; } .badge-tier2 { background: #ffd24a; } .badge-tier3 { background: #ff9ad0; } .badge-tier4 { background: #c9a0ff; }
 .stem { font-family: 'Black Han Sans', 'Jua', sans-serif; font-size: 26px; color: var(--ink); }
+.cw-word { font-family: 'Black Han Sans', 'Jua', sans-serif; font-size: 64px; line-height: 1.1; margin: 2px 0 14px; -webkit-text-stroke: 2.5px var(--ink); paint-order: stroke fill; text-shadow: 0 5px 0 var(--ink); }
 .rule-chip { background: #ff3d5a; color: #fff; border: 3px solid var(--ink); box-shadow: 0 3px 0 var(--ink); }
 .timer-bar { background: #fff; border: 3px solid var(--ink); height: 14px; }
 .timer-fill { background: #39d6ff; }
@@ -500,6 +501,7 @@ body.office { background: #cdd3df; }
     if (v.type === 'bubble') return `<div class="bubble-wrap"><span class="speech-bubble">${v.text}</span></div>`;
     if (v.type === 'arrow') return `<div><i class="ti ${ARROW_ICON[v.dir]}" style="font-size:64px;"></i></div>`;
     if (v.type === 'cross') return `<div style="margin-top:4px;">${crossHtml(v.blocked)}</div>`;
+    if (v.type === 'colorword') return `<div class="cw-word" style="color:${v.color};">${v.text}</div>`;
     return '';
   }
 
@@ -779,7 +781,7 @@ body.office { background: #cdd3df; }
   });
 
   const SUBJECT_TIPS = {
-    국어: '글자색과 이름이 어긋난 단어 하나가 오답(안전)이에요',
+    국어: '글자의 뜻도 글자색도 아닌 색이 오답(안전)이에요 (초록이 빨강 글씨면 파랑)',
     영어: '철자가 이상한 단어 하나가 오답(안전)이에요',
     수학: '나머지와 성질이 다른 하나(예: 3·삼·three 사이의 5)를 찾으세요',
     사회: '막힌 길 하나, 수도가 틀린 쌍 하나가 오답이에요',

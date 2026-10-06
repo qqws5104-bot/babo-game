@@ -105,6 +105,7 @@ body { font-family: 'Jua', 'Do Hyeon', sans-serif; color: #fff;
 .badge { border: 3px solid var(--ink); box-shadow: 0 3px 0 var(--ink); }
 .t1 { background: #b6f24a; color: var(--ink); } .t2 { background: #ffd24a; color: var(--ink); } .t3 { background: #ff9ad0; color: var(--ink); } .t4 { background: #c9a0ff; color: var(--ink); }
 .stem { font-family: 'Black Han Sans', 'Jua', sans-serif; font-size: 28px; }
+.cw-word { font-family: 'Black Han Sans', 'Jua', sans-serif; font-size: 72px; -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 0 6px 0 var(--ink); }
 .bubble { background: #fff; border: 5px solid var(--ink); box-shadow: 0 5px 0 var(--ink); }
 .opt { border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); border-radius: 14px; }
 .opts .opt:nth-child(4n+1) { background: #d9ff7a; } .opts .opt:nth-child(4n+2) { background: #9ff0ff; }
@@ -221,6 +222,7 @@ body { font-family: 'Jua', 'Do Hyeon', sans-serif; color: #fff;
     if (v.type === 'bubble') return `<div class="prompt-vis"><span class="bubble">${v.text}</span></div>`;
     if (v.type === 'arrow') return `<div class="prompt-vis"><i class="ti ${ARROW[v.dir]}" style="font-size:60px;"></i></div>`;
     if (v.type === 'cross') return `<div class="prompt-vis" style="min-height:0;">${crossHtml(v.blocked)}</div>`;
+    if (v.type === 'colorword') return `<div class="prompt-vis"><span class="cw-word" style="color:${v.color};">${v.text}</span></div>`;
     return '';
   }
 
