@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>관전 화면 - 위장 게이지 대결</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Do+Hyeon&family=Black+Han+Sans&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Do Hyeon', sans-serif; background: radial-gradient(circle at 50% 0%, #3a3164 0%, #1f1b38 65%); color: #f5f2ea; min-height: 100vh; padding: 18px 22px; }
+  .hidden { display: none !important; }
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .title { font-family: 'Jua', sans-serif; font-size: 30px; color: #ffd43b; }
+  .phase { font-size: 24px; display: flex; gap: 14px; align-items: center; }
+  .phase .time { background: #1a1633; border: 2px solid #4a3f7a; border-radius: 12px; padding: 4px 14px; font-size: 26px; color: #ffd43b; min-width: 96px; text-align: center; }
+  .legend { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .legend div { flex: 1; min-width: 220px; background: rgba(255,255,255,0.08); border-radius: 12px; padding: 8px 14px; font-size: 17px; color: #cfc9e6; }
+  .legend b { color: #ffd43b; }
+  .standing { text-align: center; font-family: 'Jua', sans-serif; font-size: 28px; margin: 6px 0 12px; min-height: 36px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .player { background: #fffaf0; color: #1a1730; border: 4px solid #2c2c2a; border-radius: 22px; padding: 16px 18px; box-shadow: 0 6px 0 #2c2c2a; position: relative; min-height: 470px; }
+  .player.p1 { border-top: 14px solid #0f6e56; }
+  .player.p2 { border-top: 14px solid #d84f3e; }
+  .pname { font-family: 'Jua', sans-serif; font-size: 26px; display: flex; justify-content: space-between; align-items: center; }
+  .tags { display: flex; gap: 6px; }
+  .tag { font-size: 14px; padding: 3px 10px; border-radius: 999px; border: 2px solid currentColor; font-family: 'Jua', sans-serif; }
+  .tag.warn { color: #c62d3a; background: #fceceb; }
+  .tag.trap { color: #854f0b; background: #faeeda; }
+  .total-row { display: flex; align-items: baseline; gap: 10px; margin: 6px 0 4px; }
+  .total-num { font-family: 'Jua', sans-serif; font-size: 52px; line-height: 1; }
+  .total-lbl { font-size: 15px; color: #5c5770; }
+  .bar { height: 18px; background: #1a1633; border: 2px solid #2c2c2a; border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; width: 0%; background: linear-gradient(180deg, #4ce0a3, #0f6e56); transition: width .4s ease; }
+  .bar-fill.hot { background: linear-gradient(180deg, #ff8787, #c62d3a); }
+  .chips { display: flex; gap: 5px; margin: 8px 0; flex-wrap: wrap; }
+  .chip { background: #1a1633; color: #cfc9e6; border-radius: 9px; padding: 3px 9px; font-size: 13px; }
+  .chip b { color: #ffd43b; font-size: 15px; }
+  .meta { display: flex; gap: 14px; font-size: 15px; color: #5c5770; margin-bottom: 8px; }
+  .stage { background: #f1efe8; border-radius: 16px; padding: 12px 14px; min-height: 190px; text-align: center; position: relative; }
+  .badge { display: inline-block; font-family: 'Jua', sans-serif; font-size: 15px; padding: 3px 12px; border-radius: 999px; border: 2px solid currentColor; margin-bottom: 8px; }
+  .t1 { color: #27500a; background: #eaf3de; } .t2 { color: #633806; background: #faeeda; } .t3 { color: #712b13; background: #faece7; } .t4 { color: #4b1528; background: #fbeaf0; }
+  .prompt-vis { font-family: 'Jua', sans-serif; font-size: 40px; min-height: 66px; display: flex; align-items: center; justify-content: center; }
+  .bubble { background: #fff3d6; border: 4px solid #2c2c2a; border-radius: 18px; padding: 4px 26px; box-shadow: 0 4px 0 #2c2c2a; }
+  .rule { font-size: 17px; color: #5c5770; margin-top: 6px; }
+  .opts { display: flex; gap: 8px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
+  .opt { background: #fff; border: 2px solid #2c2c2a; border-radius: 10px; padding: 3px 12px; font-size: 16px; }
+  .flash { position: absolute; inset: 0; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; font-family: 'Jua', sans-serif; text-align: center; }
+  .flash.ok { background: rgba(15,110,86,0.95); color: #fff; }
+  .flash.bad { background: rgba(198,45,58,0.95); color: #fff; }
+  .flash .big { font-size: 38px; }
+  .flash .sub { font-size: 18px; margin-top: 6px; font-family: 'Do Hyeon', sans-serif; }
+  .ticker { margin-top: 16px; background: rgba(0,0,0,0.28); border-radius: 14px; padding: 10px 16px; min-height: 120px; }
+  .ticker div { font-size: 19px; padding: 3px 0; color: #cfc9e6; }
+  .ticker div:first-child { color: #ffd43b; font-size: 22px; font-family: 'Jua', sans-serif; }
+  .overlay { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; }
+  .overlay.idle { background: #1f1b38; }
+  .overlay.end { background: rgba(31,27,56,0.96); }
+  .overlay h1 { font-family: 'Jua', sans-serif; font-size: 64px; margin: 0; color: #ffd43b; }
+  .overlay p { font-size: 26px; margin: 0; color: #f5f2ea; }
+  .steps { display: flex; gap: 18px; margin-top: 18px; }
+  .step { background: rgba(255,255,255,0.08); border-radius: 16px; padding: 16px 20px; width: 290px; font-size: 20px; line-height: 1.5; }
+  .step .n { font-family: 'Jua', sans-serif; font-size: 34px; color: #ffd43b; }
+  .eventflash { position: fixed; left: 50%; top: 80px; transform: translateX(-50%); background: #4b1528; color: #fff; border: 3px solid #ffd43b; border-radius: 16px; padding: 10px 28px; font-family: 'Jua', sans-serif; font-size: 30px; z-index: 40; }
+  .stem { font-family: 'Jua', sans-serif; font-size: 26px; margin-bottom: 4px; }
+  .opts { display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+  .opt { background: #fff; border: 3px solid #2c2c2a; border-radius: 12px; padding: 4px 14px; font-size: 22px; min-width: 70px; text-align: center; box-shadow: 0 3px 0 #2c2c2a; }
+  .opt.colorw { font-family: 'Jua', sans-serif; font-size: 30px; }
+  .opt img { width: 34px; height: 34px; object-fit: contain; display: block; margin: 0 auto; }
+  .cross { display: inline-grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); gap: 4px; }
+  .cross .arm { border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+  .cross .open { background: #e1f5ee; color: #0f6e56; }
+  .cross .blocked { background: #fbeaf0; color: #d84f3e; }
+  .cross .center { background: #fff3d6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #412402; }
+  .ruleline { margin-top: 8px; font-size: 16px; color: #a32d2d; font-weight: 700; }
+  .bar-fill.blind { width: 100% !important; background: repeating-linear-gradient(45deg, #555 0 10px, #666 10px 20px); }
+  .x2 { color: #ff6b6b; font-family: 'Jua', sans-serif; font-size: 30px; text-shadow: 0 0 10px rgba(255,107,107,0.8); }
+  .reveal-num { font-family: 'Jua', sans-serif; font-size: 120px; line-height: 1; }
+  .breakbox { background: rgba(31,27,56,0.97); }
+</style>
+<style id="comic-theme">
+/* ===== 코믹 · 고채도 테마 ===== */
+:root { --ink: #1b1040; }
+body { font-family: 'Jua', 'Do Hyeon', sans-serif; color: #fff;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><g fill='%23ffe94a' opacity='.6'><path d='M40 30l5 12 12 5-12 5-5 12-5-12-12-5 12-5z'/></g><g fill='%2339d6ff' opacity='.55'><path d='M190 100l4 9 9 4-9 4-4 9-4-9-9-4 9-4z'/></g><circle cx='130' cy='210' r='10' fill='none' stroke='white' stroke-width='3' opacity='.35'/><circle cx='215' cy='34' r='4' fill='white' opacity='.5'/><circle cx='34' cy='160' r='3' fill='%23ffe94a' opacity='.7'/><circle cx='95' cy='120' r='3' fill='white' opacity='.4'/></svg>"), linear-gradient(165deg, #5b2ad8 0%, #b02bd8 58%, #ff4fa3 100%); background-attachment: fixed; }
+.title { font-family: 'Black Han Sans', 'Jua', sans-serif; font-size: 38px; color: #ffe94a; -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 0 4px 0 var(--ink); display: flex; align-items: center; gap: 10px; }
+.title span { -webkit-text-stroke: 0; text-shadow: none; }
+.phase { color: #fff; text-shadow: 0 3px 0 var(--ink); font-family: 'Black Han Sans', 'Jua', sans-serif; }
+.phase .time { background: #ffe94a; color: var(--ink); border: 4px solid var(--ink); box-shadow: 0 4px 0 var(--ink); text-shadow: none; font-family: 'Black Han Sans', 'Jua', sans-serif; }
+.legend div { background: #fffbe8; color: var(--ink); border: 3px solid var(--ink); border-radius: 14px; box-shadow: 0 4px 0 var(--ink); font-size: 17px; }
+.legend div:nth-child(1) { background: #d9ff7a; } .legend div:nth-child(2) { background: #ffc2e3; }
+.legend div:nth-child(3) { background: #9ff0ff; } .legend div:nth-child(4) { background: #ffe94a; }
+.legend b { color: #c0179f; }
+.standing { font-family: 'Black Han Sans', 'Jua', sans-serif; color: #fff; -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; text-shadow: 0 4px 0 var(--ink); font-size: 30px; }
+.player { background: #fffbe8; border: 4px solid var(--ink); border-radius: 28px; box-shadow: 0 8px 0 var(--ink); color: var(--ink); }
+.player.p1 { border-top: 16px solid #2ad0ff; } .player.p2 { border-top: 16px solid #ff4fa3; }
+.pname { font-family: 'Black Han Sans', 'Jua', sans-serif; font-weight: 400; }
+.tag { border: 3px solid var(--ink); color: var(--ink); } .tag.warn { background: #ff9aa8; } .tag.trap { background: #ffd24a; }
+.total-num { font-family: 'Black Han Sans', 'Jua', sans-serif; color: var(--ink); }
+.bar { background: #fff; border: 3px solid var(--ink); }
+.bar-fill { background: linear-gradient(180deg, #c7ff6a, #4cd137); } .bar-fill.hot { background: linear-gradient(180deg, #ff9a9a, #ff3d5a); }
+.chip { background: #fff; color: var(--ink); border: 2px solid var(--ink); } .chip b { color: #c0179f; }
+.stage { background: #ffec63; border: 3px solid var(--ink); border-radius: 20px; }
+.badge { border: 3px solid var(--ink); box-shadow: 0 3px 0 var(--ink); }
+.t1 { background: #b6f24a; color: var(--ink); } .t2 { background: #ffd24a; color: var(--ink); } .t3 { background: #ff9ad0; color: var(--ink); } .t4 { background: #c9a0ff; color: var(--ink); }
+.stem { font-family: 'Black Han Sans', 'Jua', sans-serif; font-size: 28px; }
+.bubble { background: #fff; border: 5px solid var(--ink); box-shadow: 0 5px 0 var(--ink); }
+.opt { border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); border-radius: 14px; }
+.opts .opt:nth-child(4n+1) { background: #d9ff7a; } .opts .opt:nth-child(4n+2) { background: #9ff0ff; }
+.opts .opt:nth-child(4n+3) { background: #ffc2e3; } .opts .opt:nth-child(4n+4) { background: #ffd58a; }
+.opt.colorw { background: #fff !important; }
+.ruleline { color: #fff; background: #ff3d5a; border: 3px solid var(--ink); border-radius: 999px; display: inline-block; padding: 1px 14px; font-size: 15px; box-shadow: 0 3px 0 var(--ink); }
+.cross .open { background: #b6f24a; color: var(--ink); } .cross .blocked { background: #ff9aa8; color: #a3001f; }
+.cross .arm, .cross .center { border: 3px solid var(--ink); }
+.flash { border: 4px solid var(--ink); }
+.flash.ok { background: linear-gradient(160deg, #3fe05a, #1fb84a); color: #fff; } .flash.bad { background: linear-gradient(160deg, #ff5a6e, #e0152f); color: #fff; }
+.flash .big { font-family: 'Black Han Sans', 'Jua', sans-serif; -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; text-shadow: 0 4px 0 var(--ink); }
+.flash svg { filter: drop-shadow(0 4px 0 rgba(27,16,64,.4)); margin-bottom: 4px; }
+.ticker { background: rgba(27,16,64,.88); border: 4px solid #ffe94a; border-radius: 18px; }
+.ticker div:first-child { color: #ffe94a; }
+.eventflash { background: #ff3d5a; border: 4px solid var(--ink); box-shadow: 0 6px 0 var(--ink); font-family: 'Black Han Sans', 'Jua', sans-serif; }
+.overlay.idle { background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><g fill='%23ffe94a' opacity='.6'><path d='M40 30l5 12 12 5-12 5-5 12-5-12-12-5 12-5z'/></g><g fill='%2339d6ff' opacity='.55'><path d='M190 100l4 9 9 4-9 4-4 9-4-9-9-4 9-4z'/></g><circle cx='130' cy='210' r='10' fill='none' stroke='white' stroke-width='3' opacity='.35'/><circle cx='215' cy='34' r='4' fill='white' opacity='.5'/><circle cx='34' cy='160' r='3' fill='%23ffe94a' opacity='.7'/><circle cx='95' cy='120' r='3' fill='white' opacity='.4'/></svg>"), linear-gradient(160deg, #5b2ad8, #b02bd8 60%, #ff4fa3); }
+.overlay.end { background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><g fill='%23ffe94a' opacity='.6'><path d='M40 30l5 12 12 5-12 5-5 12-5-12-12-5 12-5z'/></g><g fill='%2339d6ff' opacity='.55'><path d='M190 100l4 9 9 4-9 4-4 9-4-9-9-4 9-4z'/></g><circle cx='130' cy='210' r='10' fill='none' stroke='white' stroke-width='3' opacity='.35'/><circle cx='215' cy='34' r='4' fill='white' opacity='.5'/><circle cx='34' cy='160' r='3' fill='%23ffe94a' opacity='.7'/><circle cx='95' cy='120' r='3' fill='white' opacity='.4'/></svg>"), linear-gradient(160deg, rgba(91,42,216,.97), rgba(255,79,163,.97)); }
+.breakbox { background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><g fill='%23ffe94a' opacity='.6'><path d='M40 30l5 12 12 5-12 5-5 12-5-12-12-5 12-5z'/></g><g fill='%2339d6ff' opacity='.55'><path d='M190 100l4 9 9 4-9 4-4 9-4-9-9-4 9-4z'/></g><circle cx='130' cy='210' r='10' fill='none' stroke='white' stroke-width='3' opacity='.35'/><circle cx='215' cy='34' r='4' fill='white' opacity='.5'/><circle cx='34' cy='160' r='3' fill='%23ffe94a' opacity='.7'/><circle cx='95' cy='120' r='3' fill='white' opacity='.4'/></svg>"), linear-gradient(160deg, #1fb6ff, #5b2ad8) !important; }
+.overlay h1 { font-family: 'Black Han Sans', 'Jua', sans-serif; font-weight: 400; color: #ffe94a; -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 0 6px 0 var(--ink); }
+.overlay p { text-shadow: 0 3px 0 var(--ink); }
+.step { background: #fffbe8; color: var(--ink); border: 4px solid var(--ink); border-radius: 20px; box-shadow: 0 6px 0 var(--ink); }
+.step .n { color: #ff4fa3; font-family: 'Black Han Sans', 'Jua', sans-serif; }
+.reveal-num { color: #fff; -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 0 6px 0 var(--ink); }
+.x2 { -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="title"><span id="headMascot"></span>위장 시험 대결 <span style="font-size:16px; color:#fff;">LIVE</span></div>
+    <div class="phase"><span id="x2Badge" class="x2 hidden">×2</span><span id="phaseLabel">대기중</span><span class="time" id="timeLeft">--:--</span></div>
+  </div>
+
+  <div class="legend">
+    <div>시험 문제에서 <b>오답 보기</b>를 찾아 고르면 → <b>위장 성공</b> (점수 그대로)</div>
+    <div><b>정답 보기</b>를 고르거나 5초를 넘기면 → <b>들킴!</b> (그 과목 점수 ↑)</div>
+    <div>6교시가 끝났을 때 <b>총점이 낮은 쪽이 승리</b>, 높은 쪽은 출근!</div>
+    <div>2교시부터 <b>선생님 순찰</b>, 3교시부터 방해·방어·족보 · <b>6교시는 점수 비공개 + 마지막 30초 2배!</b></div>
+  </div>
+
+  <div class="standing" id="standing"></div>
+
+  <div class="cols">
+    <div class="player p1" id="panel1"></div>
+    <div class="player p2" id="panel2"></div>
+  </div>
+
+  <div class="ticker" id="ticker"><div>방해·함정·특수 이벤트가 여기에 표시됩니다</div></div>
+
+  <div class="eventflash hidden" id="eventFlash"></div>
+  <div class="eventflash hidden" id="patrolBanner" style="top:60px; background:#7a1a1a; font-size:44px; padding:16px 44px;"><i class="ti ti-eye"></i> 선생님 순찰 중! 모두 멈춰!</div>
+
+  <div class="overlay idle" id="idleOverlay">
+    <h1>위장 시험 대결</h1>
+    <p>똑똑하면 출근! 시험을 일부러 틀리세요</p>
+    <div class="steps">
+      <div class="step"><div class="n">1</div>보기 중 <b>오답</b>을 찾아<br>고르면 안전</div>
+      <div class="step"><div class="n">2</div><b>정답</b>을 고르면<br>그 과목 점수 상승!</div>
+      <div class="step"><div class="n">3</div>6교시 후 <b>총점이 낮은 사람</b>이 승리</div>
+    </div>
+    <p style="margin-top:22px; color:#ffd43b;">곧 시작합니다...</p>
+  </div>
+
+  <div class="overlay breakbox hidden" id="breakOverlay"></div>
+
+  <div class="overlay end hidden" id="endOverlay"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io({ query: { role: 'spectator' } });
+  const ARROW = { 왼쪽: 'ti-arrow-left', 오른쪽: 'ti-arrow-right', 위: 'ti-arrow-up', 아래: 'ti-arrow-down' };
+  function faceSvg(mood, size) {
+    const INK = '#1b1040';
+    let eyes, mouth, extra = '';
+    if (mood === 'shock') {
+      eyes = `<circle cx="23" cy="34" r="7" fill="#fff" stroke="${INK}" stroke-width="3"/><circle cx="41" cy="34" r="7" fill="#fff" stroke="${INK}" stroke-width="3"/><circle cx="24" cy="35" r="2.6" fill="${INK}"/><circle cx="40" cy="35" r="2.6" fill="${INK}"/>`;
+      mouth = `<ellipse cx="32" cy="48" rx="5" ry="7" fill="#7a1230" stroke="${INK}" stroke-width="3"/>`;
+      extra = `<path d="M54 22q5 7 0 10q-5-3 0-10z" fill="#6fd6ff" stroke="${INK}" stroke-width="2"/>`;
+    } else if (mood === 'cry') {
+      eyes = `<path d="M16 37l9-6M48 37l-9-6" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/><circle cx="23" cy="38" r="2.4" fill="${INK}"/><circle cx="41" cy="38" r="2.4" fill="${INK}"/><path d="M21 40q-3 8 1 12M43 40q3 8-1 12" stroke="#39d6ff" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+      mouth = `<path d="M23 51q9-9 18 0" fill="none" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/>`;
+    } else if (mood === 'sleep') {
+      eyes = `<path d="M16 35q6 5 13 0M35 35q6 5 13 0" fill="none" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/>`;
+      mouth = `<ellipse cx="32" cy="48" rx="3.5" ry="3" fill="#7a1230" stroke="${INK}" stroke-width="2.5"/>`;
+      extra = `<text x="47" y="15" font-size="14" font-family="Jua" fill="#fff" stroke="${INK}" stroke-width="1.2">zZ</text>`;
+    } else if (mood === 'smug') {
+      eyes = `<path d="M16 35q6-8 13 0M35 35q6-8 13 0" fill="none" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/>`;
+      mouth = `<path d="M20 43q12 14 24 0z" fill="#ff4d6d" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M27 48q5 6 10 0" fill="#ff9aa8" stroke="${INK}" stroke-width="2"/>`;
+    } else {
+      eyes = `<circle cx="23" cy="34" r="5" fill="${INK}"/><circle cx="41" cy="34" r="5" fill="${INK}"/><circle cx="24.5" cy="32.5" r="1.7" fill="#fff"/><circle cx="42.5" cy="32.5" r="1.7" fill="#fff"/>`;
+      mouth = `<path d="M20 43q12 14 24 0z" fill="#ff4d6d" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+    }
+    return `<svg viewBox="0 0 64 64" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="37" r="23" fill="#ffd2a8" stroke="${INK}" stroke-width="3.5"/>
+      <path d="M11 30Q12 8 32 9Q52 8 53 30Q44 17 32 18Q20 17 11 30Z" fill="#3b1d0e" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M32 10q-3-7 5-8" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="13" cy="44" r="4.5" fill="#ff7aa8" opacity=".65"/><circle cx="51" cy="44" r="4.5" fill="#ff7aa8" opacity=".65"/>
+      ${eyes}${mouth}${extra}</svg>`;
+  }
+
+  const HAND_IMG = { 가위: '/assets/gawi.png', 바위: '/assets/bawi.png', 보: '/assets/bo.png' };
+  let state = null;
+  const cards = { 1: null, 2: null };
+  const flashes = { 1: null, 2: null };
+  const pending = { 1: null, 2: null };
+  const ticker = [];
+
+  function crossHtml(blocked) {
+    const arm = (d) => `<div class="arm ${d === blocked ? 'blocked' : 'open'}"><i class="ti ${d === blocked ? 'ti-ban' : ARROW[d]}"></i></div>`;
+    return `<div class="cross"><div></div>${arm('위')}<div></div>${arm('왼쪽')}<div class="center"><i class="ti ti-walk"></i></div>${arm('오른쪽')}<div></div>${arm('아래')}<div></div></div>`;
+  }
+
+  function visualHtml(v) {
+    if (!v) return '';
+    if (v.type === 'bubble') return `<div class="prompt-vis"><span class="bubble">${v.text}</span></div>`;
+    if (v.type === 'arrow') return `<div class="prompt-vis"><i class="ti ${ARROW[v.dir]}" style="font-size:60px;"></i></div>`;
+    if (v.type === 'cross') return `<div class="prompt-vis" style="min-height:0;">${crossHtml(v.blocked)}</div>`;
+    return '';
+  }
+
+  function optHtml(o) {
+    if (o.type === 'hand') return `<div class="opt">${HAND_IMG[o.label] ? `<img src="${HAND_IMG[o.label]}">` : ''}${o.label}</div>`;
+    if (o.type === 'arrow') return `<div class="opt"><i class="ti ${ARROW[o.label]}" style="font-size:26px;"></i><div style="font-size:14px;">${o.label}</div></div>`;
+    if (o.type === 'colorword') return `<div class="opt colorw" style="color:${o.color};">${o.label}</div>`;
+    return `<div class="opt">${o.label}</div>`;
+  }
+
+  function panelHtml(id, p) {
+    const other = state ? (id === 1 ? state.p2 : state.p1) : null;
+    const hidden = !!(p && p.hidden);
+    const maxT = state && !hidden ? Math.max(100, state.p1.total, state.p2.total) : 100;
+    const pct = hidden ? 100 : Math.min(100, ((p ? p.total : 0) / maxT) * 100);
+    const behind = !hidden && p && other ? p.total - other.total >= 25 : false;
+    const subjectEntries = p ? (p.scores ? Object.entries(p.scores) : ['국어', '영어', '수학', '사회', '과학', '예체능'].map((k) => [k, '?'])) : [];
+    const subjects = subjectEntries.map(([k, v]) => `<span class="chip">${k} <b>${v}</b></span>`).join('');
+    const c = cards[id];
+    const f = flashes[id];
+    let stage;
+    if (pending[id] && !c) stage = `<div class="prompt-vis" style="font-size:26px;">${pending[id]} 선택 중...</div>`;
+    else if (!c) stage = '<div class="prompt-vis" style="font-size:24px; color:#999;">대기 중</div>';
+    else stage = `<div class="badge t${c.tier}">${c.cardName}${c.paceMode === 'turbo' ? ' · 터보' : c.paceMode === 'safe' ? ' · 안전' : ''}</div>
+      <div class="stem">${c.stem}</div>
+      ${visualHtml(c.visual)}
+      <div class="opts">${c.options.map(optHtml).join('')}</div>
+      <div class="ruleline">정답 말고 오답을 고르세요!</div>`;
+    const flash = f ? `<div class="flash ${f.success ? 'ok' : 'bad'}">
+        ${faceSvg(f.success ? 'smug' : (f.timeout ? 'sleep' : 'shock'), 84)}
+        <div class="big">${f.success ? (f.slow > 0 ? `성공… 근데 고민했다 +${f.slow}` : '위장 성공!') : (f.timeout ? '시간 초과!' : '들켰다!')}${(!f.success && f.points) ? ` +${f.points}점${f.mult === 2 ? ' ×2' : ''}` : ''}</div>
+        <div class="sub">${f.reason}${f.subject ? ` · ${f.subject}` : ''}${f.gift ? ' · 상대가 틈을 노려요' : ''}</div></div>` : '';
+    return `
+      <div class="pname"><span>플레이어 ${id}</span>
+        <span class="tags">${p && p.isTrapped ? '<span class="tag trap">색 함정!</span>' : ''}${p && p.warning ? '<span class="tag warn">출근 위험</span>' : ''}</span></div>
+      <div class="total-row"><span class="total-num">${hidden ? '???' : (p ? p.total : 0)}</span><span class="total-lbl">${hidden ? '6교시 점수 비공개!' : '총점 (낮을수록 안전)'}</span></div>
+      <div class="bar"><div class="bar-fill ${hidden ? 'blind' : (behind ? 'hot' : '')}" style="width:${pct}%"></div></div>
+      <div class="chips">${subjects}</div>
+      <div class="meta"><span>간섭 스택 ${p ? Math.floor(p.stack) : 0}</span><span>콤보 ${p ? p.combo : 0}</span></div>
+      <div class="stage">${stage}${flash}</div>`;
+  }
+
+  function render() {
+    if (!state) return;
+    if (!state.running && !state.ended) { cards[1] = cards[2] = null; pending[1] = pending[2] = null; flashes[1] = flashes[2] = null; ticker.length = 0; }
+    document.getElementById('panel1').innerHTML = panelHtml(1, state.p1);
+    document.getElementById('panel2').innerHTML = panelHtml(2, state.p2);
+    document.getElementById('phaseLabel').textContent = state.phaseLabel || '대기중';
+    document.getElementById('idleOverlay').classList.toggle('hidden', !!(state.running || state.ended));
+    document.getElementById('breakOverlay').classList.toggle('hidden', !state.isBreak);
+    if (!state.ended) document.getElementById('endOverlay').classList.add('hidden');
+    const d = state.p1.total - state.p2.total;
+    let st = '';
+    document.getElementById('x2Badge').classList.toggle('hidden', !(state.multiplier === 2 && state.running));
+    if (state.running && state.p1.hidden) {
+      st = '점수 비공개! 결과는 마지막에 공개됩니다';
+    } else if (state.running) {
+      if (state.p1.total === 0 && state.p2.total === 0) st = '둘 다 아직 안전!';
+      else if (Math.abs(d) <= 25) st = '막상막하!';
+      else st = d < 0 ? '플레이어 1이 앞서는 중 (더 안 들킴)' : '플레이어 2가 앞서는 중 (더 안 들킴)';
+    }
+    document.getElementById('standing').textContent = st;
+    const tk = document.getElementById('ticker');
+    tk.innerHTML = ticker.length ? ticker.map((t) => `<div>${t}</div>`).join('') : '<div>방해·함정·특수 이벤트가 여기에 표시됩니다</div>';
+  }
+
+  function pushTicker(text) {
+    ticker.unshift(text);
+    ticker.length = Math.min(ticker.length, 4);
+    render();
+  }
+
+  socket.on('publicState', (s) => { state = s; render(); });
+
+  socket.on('spec:round', (r) => { cards[r.player] = r; pending[r.player] = null; render(); });
+  socket.on('spec:pace', (e) => { cards[e.player] = null; pending[e.player] = e.cardName; render(); });
+  socket.on('spec:result', (r) => {
+    flashes[r.player] = r;
+    render();
+    setTimeout(() => { if (flashes[r.player] === r) { flashes[r.player] = null; render(); } }, 1300);
+  });
+
+  socket.on('spec:event', (e) => {
+    if (e.kind === 'throw') pushTicker(`플레이어 ${e.from} → 플레이어 ${e.to}에게 [${e.label}] 방해 카드 투척!`);
+    else if (e.kind === 'defend') pushTicker(`플레이어 ${e.player} 방어 태세!`);
+    else if (e.kind === 'defendOk') pushTicker(`플레이어 ${e.player} 방어 성공! 방해공작을 막았다`);
+    else if (e.kind === 'patrol') {
+      pushTicker('선생님 순찰 시작! 움직이면 컨닝으로 걸려요');
+      const pb = document.getElementById('patrolBanner');
+      pb.classList.remove('hidden');
+      clearTimeout(window.__patrolT);
+      window.__patrolT = setTimeout(() => pb.classList.add('hidden'), (e.ms || 3000) + 300);
+    } else if (e.kind === 'patrolEnd') {
+      document.getElementById('patrolBanner').classList.add('hidden');
+    } else if (e.kind === 'caught') {
+      pushTicker(`플레이어 ${e.player}, 순찰 중 움직였다! 컨닝 적발 (+${e.points})`);
+      const f = { success: false, timeout: false, reason: '선생님 순찰 때 움직여서 컨닝 적발!', points: e.points, subject: null };
+      flashes[e.player] = f; render();
+      setTimeout(() => { if (flashes[e.player] === f) { flashes[e.player] = null; render(); } }, 1500);
+    } else if (e.kind === 'finalRush') {
+      pushTicker('막판! 지금부터 점수 2배!');
+      const ef = document.getElementById('eventFlash');
+      ef.textContent = '막판 점수 2배!';
+      ef.classList.remove('hidden');
+      setTimeout(() => ef.classList.add('hidden'), 2500);
+    } else if (e.kind === 'ink') pushTicker(`플레이어 ${e.player}의 문제에 잉크가 번졌다!`);
+    else if (e.kind === 'rush') pushTicker(`플레이어 ${e.player}의 남은 시간이 줄어들었다!`);
+    else if (e.kind === 'hint') pushTicker(`플레이어 ${e.player}이(가) 족보를 봤다!`);
+    else if (e.kind === 'trap') pushTicker(`플레이어 ${e.player}, 색 함정에 걸림! 다른 색을 30번 연타해야 풀려요`);
+    else if (e.kind === 'trapFreed') pushTicker(`플레이어 ${e.player} 함정 탈출!`);
+    else if (e.kind === 'special') {
+      pushTicker(`특수 이벤트 발동: ${e.label}!`);
+      const ef = document.getElementById('eventFlash');
+      ef.textContent = `특수 이벤트: ${e.label}!`;
+      ef.classList.remove('hidden');
+      setTimeout(() => ef.classList.add('hidden'), 2500);
+    }
+  });
+
+  socket.on('breakTime', (b) => {
+    const el = document.getElementById('breakOverlay');
+    const row = (label, d, t) => `<div style="background:rgba(255,255,255,0.08); border-radius:14px; padding:12px 22px; width:300px;"><div style="font-size:22px;">${label}</div><div style="font-size:34px; color:#ffd43b; font-family:'Jua';">총점 ${t}</div>${b.isWarmup ? '' : `<div style="font-size:18px; color:#cfc9e6;">이번 교시 +${d}</div>`}</div>`;
+    el.innerHTML = `<h1 style="font-size:54px;">${b.isWarmup ? '워밍업 끝! 이제 본 시험' : b.endedLabel + ' 종료!'}</h1>
+      <div style="display:flex; gap:18px; margin-top:10px;">${row('플레이어 1', b.p1Delta, b.p1Total)}${row('플레이어 2', b.p2Delta, b.p2Total)}</div>
+      <p style="margin-top:16px; color:#cfc9e6; font-size:22px;">다음 시간</p>
+      <p style="font-family:'Jua'; font-size:40px; margin:0;">${b.nextLabel}</p>
+      <p style="color:#cfc9e6; font-size:22px;">${b.nextHint || ''}</p>`;
+    el.classList.remove('hidden');
+  });
+
+  socket.on('gameOver', (d) => {
+    const el = document.getElementById('endOverlay');
+    el.classList.remove('hidden');
+    const dur = window.__revealMs != null ? window.__revealMs : 3000;
+    el.innerHTML = `<h1>결과 발표!</h1>
+      <div style="display:flex; gap:60px; align-items:flex-end; margin-top:10px;">
+        <div><div style="font-size:26px; color:#cfc9e6;">플레이어 1</div><div class="reveal-num" id="revealP1">0</div></div>
+        <div style="font-size:60px; padding-bottom:20px;">:</div>
+        <div><div style="font-size:26px; color:#cfc9e6;">플레이어 2</div><div class="reveal-num" id="revealP2">0</div></div>
+      </div>
+      <p style="color:#cfc9e6; font-size:22px;">총점이 낮을수록 승리</p>`;
+    const t0 = Date.now();
+    (function tick() {
+      const k = dur <= 0 ? 1 : Math.min(1, (Date.now() - t0) / dur);
+      const e = 1 - Math.pow(1 - k, 3);
+      const n1 = document.getElementById('revealP1'); const n2 = document.getElementById('revealP2');
+      if (!n1 || !n2) return;
+      n1.textContent = Math.round(d.p1Total * e); n2.textContent = Math.round(d.p2Total * e);
+      if (k < 1) { setTimeout(tick, 30); return; }
+      setTimeout(() => {
+        const tie = d.winner === null;
+        el.innerHTML = tie
+          ? `${faceSvg('smug', 140)}<h1>무승부!</h1><p>총점 ${d.p1Total} : ${d.p2Total}</p>`
+          : `<div style="display:flex; gap:40px; align-items:flex-end;">${faceSvg(d.winner === 1 ? 'happy' : 'cry', 150)}${faceSvg(d.winner === 2 ? 'happy' : 'cry', 150)}</div><h1>플레이어 ${d.winner} 승리!</h1><p>플레이어 ${d.winner === 1 ? 2 : 1}은(는) 출근 확정</p><p style="color:#cfc9e6; font-size:22px;">총점 ${d.p1Total} : ${d.p2Total} (낮을수록 승리)</p>`;
+        const tl = (t) => (t || []).map((x) => `${x.name}`).join(' · ');
+        el.innerHTML += `<p style="margin-top:14px; font-size:24px; color:#ffd43b;">플레이어 1 칭호: ${tl(d.p1Titles)}</p><p style="font-size:24px; color:#ffd43b;">플레이어 2 칭호: ${tl(d.p2Titles)}</p>`;
+      }, dur <= 0 ? 0 : 900);
+    })();
+  });
+
+  document.getElementById('headMascot').innerHTML = faceSvg('happy', 52);
+
+  setInterval(() => {
+    const el = document.getElementById('timeLeft');
+    if (!state || !state.running || !state.phaseEndsAt) { el.textContent = '--:--'; return; }
+    const ms = Math.max(0, state.phaseEndsAt - Date.now());
+    const sec = Math.ceil(ms / 1000);
+    el.textContent = String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
+  }, 250);
+</script>
+</body>
+</html>

@@ -6,7 +6,7 @@
 <title>위장 게이지 대결</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Jua&family=Do+Hyeon&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Do+Hyeon&family=Black+Han+Sans&display=swap" rel="stylesheet">
 <style>
   :root { --bg: #241f3d; --card: #fffaf0; --accent: #0f6e56; --danger: #c62d3a; --warn: #854f0b; --neon: #ffd43b; }
   * { box-sizing: border-box; }
@@ -37,6 +37,10 @@
   .gauge-bar-fill.low { background: linear-gradient(180deg, #ff8787, #c62d3a); }
   .board-token { position: absolute; top: -8px; width: 30px; height: 30px; border-radius: 50%; background: #fff3d6; border: 3px solid #2c2c2a; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: left .35s ease; z-index: 2; }
   .trap-warning { position: absolute; top: -26px; font-size: 20px; color: #d84f3e; transition: left .35s ease; z-index: 2; }
+  .subject-row { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .subject-chip { flex: 1; min-width: 60px; background: #1a1633; border: 1px solid #3a3164; border-radius: 10px; padding: 6px 4px; text-align: center; }
+  .subject-chip .label { font-size: 10px; color: #cfc9e6; }
+  .subject-chip .val { font-size: 15px; font-weight: 700; color: #ffd43b; }
   .oppo-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; padding: 5px 14px; border-radius: 999px; background: #fbeaf0; color: #72243e; margin-top: 8px; border: 2px solid #72243e; }
   .card-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; padding: 5px 14px; border-radius: 999px; margin-bottom: 12px; border: 2px solid currentColor; }
   .badge-tier1 { background: #eaf3de; color: #27500a; }
@@ -94,26 +98,165 @@
   .feedback.bad { color: var(--danger); }
   .feedback { font-family: 'Jua', sans-serif; }
   h2, .card-badge, .oppo-badge { font-family: 'Jua', sans-serif; }
+  .timer-bar { height: 8px; background: rgba(0,0,0,0.12); border-radius: 999px; overflow: hidden; margin-bottom: 12px; }
+  .timer-fill { height: 100%; width: 100%; background: #ffb300; }
+  @keyframes shakeX { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-10px); } 40% { transform: translateX(10px); } 60% { transform: translateX(-6px); } 80% { transform: translateX(6px); } }
+  body.shake .panel { animation: shakeX .4s; }
+  .intro-screen { position: fixed; inset: 0; z-index: 30; background: #1f1b38; color: #f5f2ea; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; gap: 12px; }
+  .intro-step { display: flex; align-items: center; gap: 14px; background: rgba(255,255,255,0.08); border-radius: 16px; padding: 12px 16px; width: 100%; max-width: 440px; text-align: left; font-size: 16px; line-height: 1.4; }
+  .intro-num { font-family: 'Jua', sans-serif; font-size: 28px; color: #ffd43b; width: 30px; flex-shrink: 0; }
+  .intro-hands { display: flex; gap: 12px; align-items: center; justify-content: center; margin-top: 8px; }
+  .intro-hand { position: relative; width: 52px; height: 52px; background: #fff; border-radius: 12px; padding: 4px; }
+  .intro-hand img { width: 100%; height: 100%; object-fit: contain; }
+  .intro-mark { position: absolute; right: -8px; top: -10px; font-size: 20px; font-weight: 800; width: 24px; height: 24px; line-height: 24px; border-radius: 50%; text-align: center; color: #fff; }
+  .intro-mark.no { background: #d84f3e; }
+  .intro-mark.ok { background: #0f6e56; }
+  .mini-bubble { display: inline-block; background: #fff3d6; color: #412402; border: 3px solid #2c2c2a; border-radius: 14px; padding: 4px 14px; font-family: 'Jua', sans-serif; font-size: 22px; }
+  .hint-banner { background: #fff3d6; color: #412402; border: 2px solid #2c2c2a; border-radius: 12px; padding: 8px 12px; font-size: 15px; font-weight: 700; text-align: center; margin-bottom: 10px; width: 100%; max-width: 480px; }
+  .report { margin-top: 14px; max-width: 440px; width: 92%; }
+  .report .chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .report .chip { background: rgba(255,255,255,0.75); border-radius: 10px; padding: 6px 10px; font-size: 13px; }
+  .report .tip { margin-top: 10px; font-size: 15px; background: rgba(255,255,255,0.8); border-radius: 12px; padding: 10px 14px; line-height: 1.5; }
+  .stem { font-family: 'Jua', sans-serif; font-size: 22px; margin-bottom: 8px; }
+  .rule-chip { display: inline-block; background: #fceceb; color: #a32d2d; border: 2px solid #a32d2d; border-radius: 999px; padding: 2px 12px; font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+  .opt-btn.txt { min-width: 84px; padding: 0 14px; font-size: 20px; }
+  .opt-btn.colorw { font-family: 'Jua', sans-serif; font-size: 30px; padding: 0 16px; }
+  .cross { display: inline-grid; grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(3, 46px); gap: 4px; }
+  .cross .arm { border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+  .cross .open { background: #e1f5ee; color: #0f6e56; }
+  .cross .blocked { background: #fbeaf0; color: #d84f3e; }
+  .cross .center { background: #fff3d6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #412402; }
+  .mini-exam { background: #fff; color: #1a1730; border-radius: 12px; padding: 8px 12px; margin-top: 8px; font-size: 14px; }
+  .mini-opts { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .mini-opts .mo { border: 2px solid #cfc9e6; border-radius: 8px; padding: 2px 10px; font-size: 14px; }
+  .mini-opts .mo.safe { border-color: #0f6e56; background: #e1f5ee; font-weight: 700; }
+  .feedback small { display: block; font-size: 13px; font-family: 'Do Hyeon', sans-serif; margin-top: 2px; }
+  .feedback { min-height: 44px; }
+  .break-bar { width: 260px; height: 8px; background: rgba(255,255,255,0.15); border-radius: 999px; overflow: hidden; margin-top: 16px; }
+  .break-fill { height: 100%; background: #ffd43b; width: 100%; }
+  .gauge-bar-fill.blind { width: 100% !important; background: repeating-linear-gradient(45deg, #555 0 10px, #666 10px 20px); }
+  .timer-fill { transition: background .2s; }
+  .x2 { color: #ff6b6b; font-family: 'Jua', sans-serif; font-size: 20px; text-shadow: 0 0 8px rgba(255,107,107,0.8); }
+  .actions { flex-wrap: wrap; }
+  .btn.atk { flex: 1 1 28%; padding: 12px 4px; font-size: 14px; }
+  .btn-hint { background: #ffd43b; color: #412402; flex: 1 1 100%; padding: 11px; font-size: 14px; }
+  .action-note { width: 100%; max-width: 480px; font-size: 12px; color: #cfc9e6; text-align: center; margin-top: 6px; }
+  .inked { filter: blur(7px); transition: filter .15s; }
+  .opt-btn.hinted { background: #e1f5ee; box-shadow: 0 0 0 4px #4ce0a3, 0 4px 0 #0f6e56; }
+  .opt-btn.hinted::before { content: "족보"; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #4ce0a3; color: #063d2c; font-size: 11px; padding: 0 8px; border-radius: 999px; }
+  .opt-btn { position: relative; }
+  .titles { margin-top: 10px; font-size: 15px; background: rgba(255,255,255,0.85); border-radius: 12px; padding: 10px 14px; line-height: 1.6; }
+  .titles b { font-family: 'Jua', sans-serif; font-size: 18px; }
+</style>
+<style id="comic-theme">
+/* ===== 코믹 · 고채도 테마 (굵은 외곽선 + 납작한 원색 + 과장된 표정) ===== */
+:root { --ink: #1b1040; }
+body {
+  font-family: 'Jua', 'Do Hyeon', sans-serif; color: var(--ink);
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><g fill='%23ffe94a' opacity='.6'><path d='M40 30l4 10 10 4-10 4-4 10-4-10-10-4 10-4z'/></g><g fill='%2339d6ff' opacity='.55'><path d='M180 90l3 8 8 3-8 3-3 8-3-8-8-3 8-3z'/></g><circle cx='120' cy='200' r='9' fill='none' stroke='white' stroke-width='3' opacity='.35'/><circle cx='200' cy='30' r='4' fill='white' opacity='.5'/><circle cx='30' cy='150' r='3' fill='%23ffe94a' opacity='.7'/><circle cx='90' cy='110' r='3' fill='white' opacity='.4'/></svg>"), linear-gradient(165deg, #5b2ad8 0%, #b02bd8 58%, #ff4fa3 100%);
+  background-attachment: fixed;
+}
+body.warning { background: linear-gradient(160deg, #ff3d5a, #ff9a1f) fixed; animation: flash 0.6s infinite alternate; }
+body.office { background: #cdd3df; }
+.topbar { background: #ffe94a; color: var(--ink); border: 4px solid var(--ink); border-radius: 999px; box-shadow: 0 5px 0 var(--ink); text-shadow: none; padding: 6px 18px; font-size: 16px; }
+.panel { background: #fffbe8; border: 4px solid var(--ink); border-radius: 24px; box-shadow: 0 6px 0 var(--ink); }
+.panel:has(#subjectRow) { background: #bff3ff; }
+.panel:has(#oppoState) { background: #ffd0ea; }
+.panel:has(#prompt) { background: #ffec63; position: relative; }
+.gauge-row { color: var(--ink); font-family: 'Black Han Sans', 'Jua', sans-serif; font-weight: 400; }
+.gauge-bar-outer { background: #fff; border: 3px solid var(--ink); }
+.gauge-bar-fill { background: linear-gradient(180deg, #c7ff6a, #4cd137); }
+.gauge-bar-fill.low { background: linear-gradient(180deg, #ff9a9a, #ff3d5a); }
+.board-token { border: 3px solid var(--ink); background: #ffe94a; }
+.board-end-office { color: var(--ink); } .board-end-beach { color: #ff7a1a; }
+.subject-chip { background: #fff; border: 3px solid var(--ink); border-radius: 12px; }
+.subject-chip .label { color: var(--ink); font-size: 11px; }
+.subject-chip .val { color: #c0179f; }
+.oppo-badge { background: #fff; color: #c0179f; border: 3px solid var(--ink); }
+.card-badge { border: 3px solid var(--ink) !important; color: var(--ink) !important; box-shadow: 0 3px 0 var(--ink); }
+.badge-tier1 { background: #b6f24a; } .badge-tier2 { background: #ffd24a; } .badge-tier3 { background: #ff9ad0; } .badge-tier4 { background: #c9a0ff; }
+.stem { font-family: 'Black Han Sans', 'Jua', sans-serif; font-size: 26px; color: var(--ink); }
+.rule-chip { background: #ff3d5a; color: #fff; border: 3px solid var(--ink); box-shadow: 0 3px 0 var(--ink); }
+.timer-bar { background: #fff; border: 3px solid var(--ink); height: 14px; }
+.timer-fill { background: #39d6ff; }
+.opt-btn { border: 4px solid var(--ink); border-radius: 20px; box-shadow: 0 6px 0 var(--ink); color: var(--ink); }
+.opt-btn:nth-child(4n+1) { background: #d9ff7a; } .opt-btn:nth-child(4n+2) { background: #9ff0ff; }
+.opt-btn:nth-child(4n+3) { background: #ffc2e3; } .opt-btn:nth-child(4n+4) { background: #ffd58a; }
+.opt-btn.colorw { background: #fff; }
+.opt-btn.foot { border-color: var(--ink); box-shadow: 0 6px 0 var(--ink); height: 98px; }
+.opt-btn:active, .opt-btn.foot:active { transform: translateY(6px); box-shadow: 0 0 0 var(--ink); }
+.opt-btn.hinted { background: #fff68a; box-shadow: 0 0 0 5px #39d6ff, 0 6px 0 var(--ink); }
+.opt-btn.hinted::before { background: #39d6ff; color: var(--ink); border: 2px solid var(--ink); }
+.opt-key { color: #7a63c9; }
+.btn { border: 4px solid var(--ink); border-radius: 18px; box-shadow: 0 5px 0 var(--ink); color: var(--ink); }
+.btn:active { transform: translateY(5px); box-shadow: 0 0 0 var(--ink); }
+.btn:disabled { opacity: .45; filter: grayscale(.5); box-shadow: 0 5px 0 var(--ink); }
+.btn-throw[data-kind="doodle"] { background: #ff7ac0; } .btn-throw[data-kind="ink"] { background: #5fe3ff; } .btn-throw[data-kind="rush"] { background: #ffb347; }
+.btn-hint { background: #ffe94a; } .btn-defend { background: #ff3d5a; color: #fff; }
+.action-note { color: #fff; text-shadow: 0 2px 0 var(--ink); font-size: 13px; }
+.speech-bubble { background: #fff; border: 5px solid var(--ink); box-shadow: 0 6px 0 var(--ink); color: var(--ink); }
+.speech-bubble::after { border-color: var(--ink) transparent transparent; } .speech-bubble::before { border-color: #fff transparent transparent; }
+.feedback { color: var(--ink); } .feedback.bad { color: #d4002a; }
+.hint-banner { background: #fff; border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); color: var(--ink); }
+.incoming { background: #ff3d5a; border-bottom: 4px solid var(--ink); font-family: 'Black Han Sans', 'Jua', sans-serif; font-weight: 400; }
+.cross .open { background: #b6f24a; color: var(--ink); } .cross .blocked { background: #ff9aa8; color: #a3001f; }
+.cross .arm, .cross .center { border: 3px solid var(--ink); }
+/* 오버레이 */
+.intro-screen { background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><g fill='%23ffe94a' opacity='.6'><path d='M40 30l4 10 10 4-10 4-4 10-4-10-10-4 10-4z'/></g><g fill='%2339d6ff' opacity='.55'><path d='M180 90l3 8 8 3-8 3-3 8-3-8-8-3 8-3z'/></g><circle cx='120' cy='200' r='9' fill='none' stroke='white' stroke-width='3' opacity='.35'/><circle cx='200' cy='30' r='4' fill='white' opacity='.5'/><circle cx='30' cy='150' r='3' fill='%23ffe94a' opacity='.7'/><circle cx='90' cy='110' r='3' fill='white' opacity='.4'/></svg>"), linear-gradient(160deg, #5b2ad8, #b02bd8 60%, #ff4fa3) !important; color: #fff !important; }
+.intro-screen h1, #breakTitle, #revealScreen p:first-child { font-family: 'Black Han Sans', 'Jua', sans-serif !important; font-weight: 400; color: #ffe94a !important; -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 0 4px 0 var(--ink); }
+.intro-step { background: #fffbe8; color: var(--ink); border: 4px solid var(--ink); border-radius: 20px; box-shadow: 0 5px 0 var(--ink); }
+.intro-step span[style*="cfc9e6"] { color: #5b4a99 !important; }
+.intro-num { color: #ff4fa3; font-family: 'Black Han Sans', 'Jua', sans-serif; }
+.intro-hand { border: 3px solid var(--ink); } .mini-bubble { border: 3px solid var(--ink); }
+.mini-exam { border: 3px solid var(--ink); } .mini-opts .mo { border-color: var(--ink); } .mini-opts .mo.safe { background: #d9ff7a; }
+#paceScreen { background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><g fill='%23ffe94a' opacity='.6'><path d='M40 30l4 10 10 4-10 4-4 10-4-10-10-4 10-4z'/></g><g fill='%2339d6ff' opacity='.55'><path d='M180 90l3 8 8 3-8 3-3 8-3-8-8-3 8-3z'/></g><circle cx='120' cy='200' r='9' fill='none' stroke='white' stroke-width='3' opacity='.35'/><circle cx='200' cy='30' r='4' fill='white' opacity='.5'/><circle cx='30' cy='150' r='3' fill='%23ffe94a' opacity='.7'/><circle cx='90' cy='110' r='3' fill='white' opacity='.4'/></svg>"), linear-gradient(160deg, #5b2ad8, #b02bd8) !important; }
+#breakScreen { background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><g fill='%23ffe94a' opacity='.6'><path d='M40 30l4 10 10 4-10 4-4 10-4-10-10-4 10-4z'/></g><g fill='%2339d6ff' opacity='.55'><path d='M180 90l3 8 8 3-8 3-3 8-3-8-8-3 8-3z'/></g><circle cx='120' cy='200' r='9' fill='none' stroke='white' stroke-width='3' opacity='.35'/><circle cx='200' cy='30' r='4' fill='white' opacity='.5'/><circle cx='30' cy='150' r='3' fill='%23ffe94a' opacity='.7'/><circle cx='90' cy='110' r='3' fill='white' opacity='.4'/></svg>"), linear-gradient(160deg, #1fb6ff, #5b2ad8) !important; }
+#revealScreen { background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><g fill='%23ffe94a' opacity='.6'><path d='M40 30l4 10 10 4-10 4-4 10-4-10-10-4 10-4z'/></g><g fill='%2339d6ff' opacity='.55'><path d='M180 90l3 8 8 3-8 3-3 8-3-8-8-3 8-3z'/></g><circle cx='120' cy='200' r='9' fill='none' stroke='white' stroke-width='3' opacity='.35'/><circle cx='200' cy='30' r='4' fill='white' opacity='.5'/><circle cx='30' cy='150' r='3' fill='%23ffe94a' opacity='.7'/><circle cx='90' cy='110' r='3' fill='white' opacity='.4'/></svg>"), linear-gradient(160deg, #5b2ad8, #ff4fa3) !important; }
+#patrolScreen { background: linear-gradient(160deg, rgba(255,61,90,.97), rgba(255,154,31,.97)) !important; }
+.trap-btn { border: 4px solid var(--ink); box-shadow: 0 5px 0 var(--ink); }
+.trap-progress { background: #fff; border: 3px solid var(--ink); } .trap-progress-fill { background: var(--ink); }
+.break-bar { border: 3px solid var(--ink); background: #fff; } .break-fill { background: #ff4fa3; }
+.result-screen.win { background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><g fill='%23ffe94a' opacity='.6'><path d='M40 30l4 10 10 4-10 4-4 10-4-10-10-4 10-4z'/></g><g fill='%2339d6ff' opacity='.55'><path d='M180 90l3 8 8 3-8 3-3 8-3-8-8-3 8-3z'/></g><circle cx='120' cy='200' r='9' fill='none' stroke='white' stroke-width='3' opacity='.35'/><circle cx='200' cy='30' r='4' fill='white' opacity='.5'/><circle cx='30' cy='150' r='3' fill='%23ffe94a' opacity='.7'/><circle cx='90' cy='110' r='3' fill='white' opacity='.4'/></svg>"), linear-gradient(160deg, #b6f24a, #39d6ff); }
+.result-screen.lose { background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><g fill='%23ffe94a' opacity='.6'><path d='M40 30l4 10 10 4-10 4-4 10-4-10-10-4 10-4z'/></g><g fill='%2339d6ff' opacity='.55'><path d='M180 90l3 8 8 3-8 3-3 8-3-8-8-3 8-3z'/></g><circle cx='120' cy='200' r='9' fill='none' stroke='white' stroke-width='3' opacity='.35'/><circle cx='200' cy='30' r='4' fill='white' opacity='.5'/><circle cx='30' cy='150' r='3' fill='%23ffe94a' opacity='.7'/><circle cx='90' cy='110' r='3' fill='white' opacity='.4'/></svg>"), linear-gradient(160deg, #ffb347, #ff3d5a); }
+.result-screen h1 { font-family: 'Black Han Sans', 'Jua', sans-serif; font-weight: 400; font-size: 44px; color: #fff; -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 0 5px 0 var(--ink); }
+.result-screen.win #resultIcon, .result-screen.lose #resultIcon { color: var(--ink); font-size: 56px; }
+.stamp { background: #fff; border: 5px double var(--ink); box-shadow: 0 5px 0 var(--ink); }
+.result-screen.win .stamp { color: #0a8f3c; } .result-screen.lose .stamp { color: #d4002a; }
+.report .chip { background: #fff; border: 2px solid var(--ink); } .report .tip, .titles { background: #fff; border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); }
+/* 마스코트 + 만화 효과음 */
+.mascot { position: absolute; top: -34px; right: 6px; width: 72px; height: 72px; z-index: 4; filter: drop-shadow(0 4px 0 rgba(27,16,64,.35)); }
+.mascot svg { width: 100%; height: 100%; display: block; }
+.mascot.bounce { animation: mascotBounce .5s ease; }
+@keyframes mascotBounce { 0% { transform: scale(1); } 35% { transform: scale(1.25) rotate(-8deg); } 100% { transform: scale(1); } }
+.pop { position: absolute; left: 50%; top: 40%; z-index: 6; pointer-events: none; opacity: 0; transform: translate(-50%, -50%) scale(0);
+  filter: drop-shadow(4px 0 0 #1b1040) drop-shadow(-4px 0 0 #1b1040) drop-shadow(0 4px 0 #1b1040) drop-shadow(0 -4px 0 #1b1040); }
+.pop span { display: block; padding: 26px 30px; background: #ff3d5a; color: #fff; font-family: 'Black Han Sans', 'Jua', sans-serif; font-size: 30px; white-space: nowrap;
+  -webkit-text-stroke: 1.5px #1b1040; paint-order: stroke fill;
+  clip-path: polygon(50% 0%, 61% 14%, 79% 7%, 80% 25%, 98% 28%, 88% 44%, 100% 58%, 82% 66%, 85% 85%, 67% 82%, 57% 100%, 45% 86%, 28% 97%, 24% 79%, 5% 79%, 14% 62%, 0% 48%, 17% 38%, 12% 20%, 31% 22%); }
+.pop.show { animation: popIn .85s ease-out forwards; }
+@keyframes popIn { 0% { opacity: 1; transform: translate(-50%, -50%) scale(0) rotate(-10deg); } 25% { opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(-5deg); } 70% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-5deg); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1) rotate(-5deg); } }
 </style>
 </head>
 <body>
   <div class="topbar">
     <span><i class="ti ti-clock"></i> <span id="phaseLabel">대기중</span></span>
+    <span id="x2Badge" class="x2 hidden">×2</span>
     <span id="comboLabel" class="hidden"><i class="ti ti-flame"></i> <span id="comboNum">0</span> 콤보</span>
     <span><i class="ti ti-bolt"></i> <span id="stackLabel">간섭스택 0</span></span>
   </div>
 
   <div class="panel">
-    <div class="gauge-row"><span>내 위장 게이지</span><span id="gaugeNum">100</span></div>
+    <div class="gauge-row"><span id="gaugeLabel">내 총점 (낮을수록 안전)</span><span id="gaugeNum">0</span></div>
     <div class="board-track" id="boardTrack">
-      <i class="ti ti-briefcase board-end board-end-office"></i>
+      <i class="ti ti-beach board-end board-end-beach"></i>
       <div class="gauge-bar-outer" id="gaugeBarOuter">
-        <div class="gauge-bar-fill" id="gaugeBarFill" style="width:100%"></div>
+        <div class="gauge-bar-fill" id="gaugeBarFill" style="width:0%"></div>
         <div class="board-token" id="boardToken"><i class="ti ti-run"></i></div>
         <i class="ti ti-alert-triangle trap-warning hidden" id="trapWarningIcon"></i>
       </div>
-      <i class="ti ti-beach board-end board-end-beach"></i>
+      <i class="ti ti-briefcase board-end board-end-office"></i>
     </div>
+    <div class="subject-row" id="subjectRow"></div>
   </div>
 
   <div class="panel">
@@ -121,22 +264,98 @@
     <span class="oppo-badge hidden" id="oppoWarning"><i class="ti ti-flame"></i> 상대 경고모드</span>
   </div>
 
+  <div class="hint-banner hidden" id="warmupHint">연습 중! 외친 것이 <u>아닌</u> 걸 고르세요 (점수 영향 없음)</div>
+
   <div class="panel">
+    <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+    <div class="mascot" id="mascot"></div>
+    <div class="pop" id="pop"><span></span></div>
     <div id="cardBadge" class="card-badge hidden"></div>
+    <div class="rule-chip">정답 말고 <b>오답</b>을 고르세요! <span style="font-weight:400;">(3초 넘게 고민하면 점수↑)</span></div>
     <div class="prompt" id="prompt">대기 중...</div>
     <div class="options" id="options"></div>
     <div class="feedback" id="feedback"></div>
   </div>
 
   <div class="actions">
-    <button class="btn btn-throw" id="throwBtn" disabled><i class="ti ti-send"></i> 방해 카드 던지기</button>
-    <button class="btn btn-defend hidden" id="defendBtn"><i class="ti ti-shield"></i> 방어!</button>
+    <button class="btn btn-throw atk" data-kind="doodle" disabled title="낙서: 상대 화면이 색으로 뒤덮여 다른 색을 30번 연타해야 풀림"><i class="ti ti-pencil"></i> 낙서</button>
+    <button class="btn btn-throw atk" data-kind="ink" disabled title="잉크 번짐: 상대 문제가 잠깐 흐려짐"><i class="ti ti-droplet"></i> 잉크</button>
+    <button class="btn btn-throw atk" data-kind="rush" disabled title="시간 단축: 상대 남은 시간이 2.5초로 줄어듦"><i class="ti ti-hourglass"></i> 시간단축</button>
+    <button class="btn btn-hint" id="hintBtn" disabled><i class="ti ti-notebook"></i> 족보 보기 (오답 힌트)</button>
+    <button class="btn btn-defend hidden" id="defendBtn" style="flex: 1 1 100%;"><i class="ti ti-shield"></i> 방어!</button>
   </div>
+  <div class="action-note">스택 1개로 방해 3종 또는 족보 / 방어는 방해가 날아올 때만 (3교시부터)</div>
 
   <div class="result-screen hidden" id="resultScreen">
+    <div id="resultFace"></div>
     <i class="ti" id="resultIcon"></i>
     <h1 id="resultTitle"></h1>
     <div class="stamp" id="resultStamp"></div>
+    <div class="report" id="resultReport"></div>
+  </div>
+
+  <div class="intro-screen" id="introScreen">
+    <div id="introFace"></div>
+    <h1 style="font-family:'Jua', sans-serif; font-size:30px; margin:0; color:#ffd43b;">위장 시험 대결</h1>
+    <p style="font-size:15px; margin:0 0 4px; color:#cfc9e6;">똑똑하면 출근! 시험을 일부러 틀리세요</p>
+    <div class="intro-step">
+      <span class="intro-num">1</span>
+      <div>시험지에서 <b>오답 보기</b>를 찾아 고르면 안전!
+        <div class="mini-exam">철자가 맞는 단어는?
+          <div class="mini-opts"><span class="mo">apple</span><span class="mo">banana</span><span class="mo">grape</span><span class="mo safe">lemno ← 이걸 고르기</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="intro-step"><span class="intro-num">2</span><div><b>정답 보기</b>를 고르면 그 과목 점수가 올라요 (똑똑함 들통!)<br><span style="font-size:13px; color:#cfc9e6;">3초 넘게 고민해도 점수가 조금씩 올라요 · 5초를 넘기면 들킨 걸로!</span></div></div>
+    <div class="intro-step"><span class="intro-num">3</span><div>6교시가 끝났을 때 <b>총점이 낮은 사람이 승리</b><br><span style="font-size:13px; color:#cfc9e6;">높은 사람은 출근! 6교시는 점수 비공개, 마지막 30초는 점수 2배!</span></div></div>
+    <p style="font-size:14px; color:#ffd43b; margin-top:6px;">곧 시작합니다...</p>
+  </div>
+
+  <div class="trap-screen hidden" id="revealScreen" style="background:#1f1b38; color:#f5f2ea; z-index:40;">
+    <p style="font-family:'Jua', sans-serif; font-size:30px; color:#ffd43b; margin-bottom:14px;">결과 발표!</p>
+    <div style="display:flex; gap:26px; align-items:flex-end;">
+      <div><div style="font-size:15px; color:#cfc9e6;">나</div><div style="font-family:'Jua', sans-serif; font-size:64px;" id="revealMine">0</div></div>
+      <div style="font-size:30px; padding-bottom:12px;">:</div>
+      <div><div style="font-size:15px; color:#cfc9e6;">상대</div><div style="font-family:'Jua', sans-serif; font-size:64px;" id="revealOpp">0</div></div>
+    </div>
+    <p style="font-size:14px; color:#cfc9e6; margin-top:10px;">총점이 낮을수록 승리</p>
+  </div>
+
+  <div class="trap-screen hidden" id="patrolScreen" style="background:rgba(58,20,20,0.96); color:#fff; z-index:25; pointer-events:none;">
+    <i class="ti ti-eye" style="font-size:90px;"></i>
+    <p style="font-family:'Jua', sans-serif; font-size:34px; margin:6px 0;">선생님 순찰 중!</p>
+    <p style="font-size:20px;">손 떼세요! 움직이면 걸려요</p>
+    <p style="font-family:'Jua', sans-serif; font-size:64px; color:#ffd43b; margin:4px 0;" id="patrolCount">3</p>
+    <p style="font-size:22px; color:#ff9b9b; font-weight:800; min-height:30px;" id="patrolCaughtMsg"></p>
+  </div>
+
+  <div class="trap-screen hidden" id="breakScreen" style="background:#1f1b38; color:#f5f2ea;">
+    <p style="font-family:'Jua', sans-serif; font-size:28px; color:#ffd43b; margin-bottom:6px;" id="breakTitle">쉬는 시간</p>
+    <p style="font-size:18px; margin-bottom:4px;" id="breakDelta"></p>
+    <p style="font-size:15px; color:#cfc9e6; margin-bottom:14px;" id="breakTotals"></p>
+    <p style="font-size:16px; color:#cfc9e6;">다음 시간</p>
+    <p style="font-family:'Jua', sans-serif; font-size:24px; margin:2px 0;" id="breakNext"></p>
+    <p style="font-size:15px; color:#cfc9e6; max-width:300px;" id="breakHint"></p>
+    <div class="break-bar"><div class="break-fill" id="breakFill"></div></div>
+  </div>
+
+  <div class="trap-screen hidden" id="paceScreen" style="background:#1f1b38; color:#f5f2ea;">
+    <p style="font-size:16px; color:#cfc9e6; margin-bottom:4px;">다음 카드</p>
+    <p style="font-size:26px; font-weight:800; margin-bottom:10px;" id="paceCardName">카드명</p>
+    <div class="trap-progress" style="margin-bottom:12px;"><div class="trap-progress-fill" id="paceTimerFill" style="width:100%; background:#ffd43b;"></div></div>
+    <p id="paceStanding" style="font-size:14px; color:#cfc9e6; margin-bottom:18px; min-height:20px;"></p>
+    <div style="display:flex; gap:20px;">
+      <button class="trap-btn" id="paceSafeBtn" style="width:150px; height:130px; background:#4ce0a3; color:#063d2c; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;">
+        <i class="ti ti-shield-check" style="font-size:28px;"></i>
+        <span>안전</span>
+        <span style="font-size:11px; font-weight:400;">감점↓ 보상↓</span>
+      </button>
+      <button class="trap-btn" id="paceTurboBtn" style="width:150px; height:130px; background:#ffd43b; color:#412402; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;">
+        <i class="ti ti-bolt" style="font-size:28px;"></i>
+        <span>터보</span>
+        <span style="font-size:11px; font-weight:400;">감점↑ 보상↑</span>
+      </button>
+    </div>
   </div>
 
   <div class="trap-screen hidden" id="trapScreen">
@@ -149,6 +368,54 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
+  // ---- 오리지널 바보 캐릭터 (표정 5종) ----
+  function faceSvg(mood, size) {
+    const INK = '#1b1040';
+    let eyes, mouth, extra = '';
+    if (mood === 'shock') {
+      eyes = `<circle cx="23" cy="34" r="7" fill="#fff" stroke="${INK}" stroke-width="3"/><circle cx="41" cy="34" r="7" fill="#fff" stroke="${INK}" stroke-width="3"/><circle cx="24" cy="35" r="2.6" fill="${INK}"/><circle cx="40" cy="35" r="2.6" fill="${INK}"/>`;
+      mouth = `<ellipse cx="32" cy="48" rx="5" ry="7" fill="#7a1230" stroke="${INK}" stroke-width="3"/>`;
+      extra = `<path d="M54 22q5 7 0 10q-5-3 0-10z" fill="#6fd6ff" stroke="${INK}" stroke-width="2"/>`;
+    } else if (mood === 'cry') {
+      eyes = `<path d="M16 37l9-6M48 37l-9-6" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/><circle cx="23" cy="38" r="2.4" fill="${INK}"/><circle cx="41" cy="38" r="2.4" fill="${INK}"/><path d="M21 40q-3 8 1 12M43 40q3 8-1 12" stroke="#39d6ff" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+      mouth = `<path d="M23 51q9-9 18 0" fill="none" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/>`;
+    } else if (mood === 'sleep') {
+      eyes = `<path d="M16 35q6 5 13 0M35 35q6 5 13 0" fill="none" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/>`;
+      mouth = `<ellipse cx="32" cy="48" rx="3.5" ry="3" fill="#7a1230" stroke="${INK}" stroke-width="2.5"/>`;
+      extra = `<text x="47" y="15" font-size="14" font-family="Jua" fill="#fff" stroke="${INK}" stroke-width="1.2">zZ</text>`;
+    } else if (mood === 'smug') {
+      eyes = `<path d="M16 35q6-8 13 0M35 35q6-8 13 0" fill="none" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/>`;
+      mouth = `<path d="M20 43q12 14 24 0z" fill="#ff4d6d" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M27 48q5 6 10 0" fill="#ff9aa8" stroke="${INK}" stroke-width="2"/>`;
+    } else {
+      eyes = `<circle cx="23" cy="34" r="5" fill="${INK}"/><circle cx="41" cy="34" r="5" fill="${INK}"/><circle cx="24.5" cy="32.5" r="1.7" fill="#fff"/><circle cx="42.5" cy="32.5" r="1.7" fill="#fff"/>`;
+      mouth = `<path d="M20 43q12 14 24 0z" fill="#ff4d6d" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`;
+    }
+    return `<svg viewBox="0 0 64 64" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="37" r="23" fill="#ffd2a8" stroke="${INK}" stroke-width="3.5"/>
+      <path d="M11 30Q12 8 32 9Q52 8 53 30Q44 17 32 18Q20 17 11 30Z" fill="#3b1d0e" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M32 10q-3-7 5-8" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="13" cy="44" r="4.5" fill="#ff7aa8" opacity=".65"/><circle cx="51" cy="44" r="4.5" fill="#ff7aa8" opacity=".65"/>
+      ${eyes}${mouth}${extra}</svg>`;
+  }
+  let mascotT = null;
+  function setMascot(mood, ms) {
+    const el = document.getElementById('mascot');
+    if (!el) return;
+    el.innerHTML = faceSvg(mood, 72);
+    el.classList.remove('bounce'); void el.offsetWidth; el.classList.add('bounce');
+    clearTimeout(mascotT);
+    if (ms) mascotT = setTimeout(() => { el.innerHTML = faceSvg('happy', 72); }, ms);
+  }
+  function popBurst(text, color) {
+    const pop = document.getElementById('pop');
+    if (!pop) return;
+    pop.querySelector('span').textContent = text;
+    pop.querySelector('span').style.background = color || '#ff3d5a';
+    pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show');
+  }
+  document.getElementById('mascot').innerHTML = faceSvg('happy', 72);
+  document.getElementById('introFace').innerHTML = faceSvg('happy', 96);
+
   const params = new URLSearchParams(location.search);
   const role = params.get('role') === '2' ? '2' : '1';
   const socket = io({ query: { role } });
@@ -157,66 +424,116 @@
 
   socket.on('assigned', ({ id }) => { myId = id; });
 
+  let latestState = null;
+  const ROASTS = ['방금 너무 똑똑했어요', '사장님이 지켜보고 있습니다', '출근 냄새가 납니다', '지능이 들켰어요', '머리 좋은 티가 나요', '성실함이 새어 나옵니다'];
+
+  function startBar(el, ms, freeMs) {
+    clearTimeout(el._freeT);
+    el.style.background = '';
+    el.style.transition = 'none';
+    el.style.width = '100%';
+    void el.offsetWidth;
+    el.style.transition = `width ${ms}ms linear`;
+    el.style.width = '0%';
+    // 고민 구간(freeMs)이 지나면 바가 빨갛게 변함 = 지금부터 점수가 오른다
+    if (freeMs && freeMs < ms) el._freeT = setTimeout(() => { el.style.background = '#d84f3e'; }, freeMs);
+  }
+
+  function standing() {
+    if (!latestState) return '';
+    const me = myId === 1 ? latestState.p1 : latestState.p2;
+    const oppo = myId === 1 ? latestState.p2 : latestState.p1;
+    if (me.hidden) return '점수 비공개! 끝날 때까지 몰라요';
+    const diff = me.total - oppo.total;
+    if (me.total === 0 && oppo.total === 0) return '둘 다 아직 안전해요';
+    if (diff > 25) return '지금 내가 더 들켰어요 (뒤지는 중) → 터보로 만회?';
+    if (diff < -25) return '지금 내가 앞서는 중 → 안전하게 굳히기?';
+    return '막상막하!';
+  }
+
   socket.on('round', (round) => {
     currentRound = round;
+    document.getElementById('paceScreen').classList.add('hidden');
     document.getElementById('feedback').textContent = '';
     renderRound(round);
+    startBar(document.getElementById('timerFill'), round.timeoutMs || 5000, round.freeMs);
+  });
+
+  socket.on('result', (r) => {
+    const fb = document.getElementById('feedback');
+    if (r.warmup) {
+      fb.innerHTML = r.reason;
+      fb.className = 'feedback' + (r.success ? '' : ' bad');
+    } else if (r.success) {
+      fb.innerHTML = `성공! 계속 위장 중<small>${r.reason}</small>`;
+      fb.className = 'feedback';
+    } else {
+      const roast = r.timeout ? '시간 초과!' : '들켰다! ' + ROASTS[Math.floor(Math.random() * ROASTS.length)];
+      fb.innerHTML = `${roast} (${r.subject} +${r.points}${r.mult === 2 ? ' ×2' : ''})${r.gift ? ' · 상대가 틈을 노려요' : ''}<small>${r.reason}</small>`;
+      fb.className = 'feedback bad';
+    }
+    if (r.success) {
+      setMascot('smug', 1400);
+      popBurst(r.slow > 0 ? '느려!' : (r.warmup ? '굿!' : '바보 굿!'), r.slow > 0 ? '#ff9a1f' : '#2fb344');
+    } else {
+      setMascot(r.timeout ? 'sleep' : 'shock', 1400);
+      popBurst(r.timeout ? '시간초과!' : '들켰다!', r.timeout ? '#ff9a1f' : '#ff3d5a');
+    }
+    if (!r.success && !r.warmup) {
+      document.body.classList.add('shake');
+      setTimeout(() => document.body.classList.remove('shake'), 400);
+    }
   });
 
   const TIER_ICON = { 1: 'ti-mood-smile', 2: 'ti-flame', 3: 'ti-bolt', 4: 'ti-skull' };
-  const HAND_IMG = {
-    가위: '/assets/gawi.png',
-    바위: '/assets/bawi.png',
-    보: '/assets/bo.png',
-  };
+  const HAND_IMG = { 가위: '/assets/gawi.png', 바위: '/assets/bawi.png', 보: '/assets/bo.png' };
   const ARROW_ICON = { 왼쪽: 'ti-arrow-left', 오른쪽: 'ti-arrow-right', 위: 'ti-arrow-up', 아래: 'ti-arrow-down' };
-  const COLOR_HEX_MAP = { 빨강: '#E24B4A', 파랑: '#378ADD', 초록: '#639922' };
   let activeButtons = [];
+
+  function crossHtml(blocked) {
+    const arm = (d) => `<div class="arm ${d === blocked ? 'blocked' : 'open'}"><i class="ti ${d === blocked ? 'ti-ban' : ARROW_ICON[d]}"></i></div>`;
+    return `<div class="cross"><div></div>${arm('위')}<div></div>${arm('왼쪽')}<div class="center"><i class="ti ti-walk"></i></div>${arm('오른쪽')}<div></div>${arm('아래')}<div></div></div>`;
+  }
+
+  function visualHtml(v) {
+    if (!v) return '';
+    if (v.type === 'bubble') return `<div class="bubble-wrap"><span class="speech-bubble">${v.text}</span></div>`;
+    if (v.type === 'arrow') return `<div><i class="ti ${ARROW_ICON[v.dir]}" style="font-size:64px;"></i></div>`;
+    if (v.type === 'cross') return `<div style="margin-top:4px;">${crossHtml(v.blocked)}</div>`;
+    return '';
+  }
 
   function renderRound(round) {
     const badge = document.getElementById('cardBadge');
     badge.classList.remove('hidden');
     badge.className = 'card-badge badge-tier' + round.tier;
-    badge.innerHTML = `<i class="ti ${TIER_ICON[round.tier] || 'ti-bolt'}"></i> ${round.cardName}`;
+    const paceTag = round.paceMode === 'turbo'
+      ? ' <i class="ti ti-bolt" style="color:#ffd43b;"></i> 터보'
+      : round.paceMode === 'safe' ? ' <i class="ti ti-shield-check" style="color:#4ce0a3;"></i> 안전' : '';
+    badge.innerHTML = `<i class="ti ${TIER_ICON[round.tier] || 'ti-bolt'}"></i> ${round.cardName}${paceTag}`;
 
-    const promptEl = document.getElementById('prompt');
-    const isFoot = round.cardId === 'giboo';
-    const isArrow = round.cardId === 'leftright' || round.cardId === 'double';
-    const isBlocked = round.cardId === 'blocked4';
-    if (isFoot) {
-      promptEl.innerHTML = `<div class="bubble-wrap"><span class="speech-bubble">${round.bubble}!</span></div>`;
-    } else if (isBlocked && round.blockedDir) {
-      promptEl.innerHTML = `<div style="position:relative; display:inline-block;">
-          <i class="ti ${ARROW_ICON[round.blockedDir]}" style="font-size:64px; color:#999;"></i>
-          <i class="ti ti-ban" style="position:absolute; inset:0; font-size:76px; color:#d84f3e; display:flex; align-items:center; justify-content:center; margin:-6px;"></i>
-        </div>
-        <div style="font-size:14px; color:#5c5770; margin-top:6px;">이 방향은 막혔습니다</div>`;
-    } else if (isArrow && round.arrowDir) {
-      const releaseTag = round.cardId === 'double' && round.released
-        ? '<div style="font-size:16px; color:#d84f3e; font-weight:700; margin-top:8px;"><i class="ti ti-lock-open"></i> 해제 신호!</div>'
-        : '';
-      promptEl.innerHTML = `<div style="text-align:center;"><i class="ti ${ARROW_ICON[round.arrowDir]}" style="font-size:64px;"></i>${releaseTag}</div>`;
-    } else if (round.cardId === 'colorword' && round.wordColorHex) {
-      promptEl.innerHTML = `<span style="color:${round.wordColorHex}; font-weight:700;">${round.prompt}</span>`;
-    } else {
-      promptEl.textContent = round.prompt;
-    }
+    document.getElementById('prompt').innerHTML = `<div class="stem">${round.stem}</div>${visualHtml(round.visual)}`;
 
     const optsEl = document.getElementById('options');
     optsEl.innerHTML = '';
     activeButtons = [];
     round.options.forEach((opt, idx) => {
-      const label = typeof opt === 'object' ? opt.label : opt;
       const btn = document.createElement('button');
-      btn.className = 'opt-btn' + (isFoot ? ' foot' : '');
-      if (isFoot && HAND_IMG[label]) {
-        btn.innerHTML = `<span class="opt-emoji"><img src="${HAND_IMG[label]}" alt="${label}" /></span>${label}<span class="opt-key">${idx + 1}</span>`;
-      } else if ((isArrow || isBlocked) && ARROW_ICON[label]) {
-        btn.innerHTML = `<i class="ti ${ARROW_ICON[label]}" style="font-size:28px; display:block; margin-bottom:2px;"></i>${label}<span class="opt-key">${idx + 1}</span>`;
+      const key = `<span class="opt-key">${idx + 1}</span>`;
+      if (opt.type === 'hand' && HAND_IMG[opt.label]) {
+        btn.className = 'opt-btn foot';
+        btn.innerHTML = `<span class="opt-emoji"><img src="${HAND_IMG[opt.label]}" alt="${opt.label}" /></span>${opt.label}${key}`;
+      } else if (opt.type === 'arrow' && ARROW_ICON[opt.label]) {
+        btn.className = 'opt-btn';
+        btn.innerHTML = `<i class="ti ${ARROW_ICON[opt.label]}" style="font-size:28px; display:block; margin-bottom:2px;"></i>${opt.label}${key}`;
+      } else if (opt.type === 'colorword') {
+        btn.className = 'opt-btn colorw';
+        btn.innerHTML = `<span style="color:${opt.color};">${opt.label}</span>${key}`;
       } else {
-        btn.innerHTML = `${label}<span class="opt-key">${idx + 1}</span>`;
+        btn.className = 'opt-btn txt';
+        btn.innerHTML = `${opt.label}${key}`;
       }
-      btn.onclick = () => submitAnswer(label);
+      btn.onclick = () => submitAnswer(opt.key);
       optsEl.appendChild(btn);
       activeButtons.push(btn);
     });
@@ -231,17 +548,12 @@
 
   function submitAnswer(value) {
     if (!currentRound) return;
-    const correct = currentRound.correctMode === 'exclude'
-      ? String(value) !== String(currentRound.excludeValue)
-      : currentRound.correctMode === 'excludeMulti'
-        ? !currentRound.excludeValues.map(String).includes(String(value))
-        : String(value) === String(currentRound.correct);
-    const fb = document.getElementById('feedback');
-    fb.textContent = correct ? '성공! 계속 위장 중' : '앗, 본능이 나와버렸다';
-    fb.className = 'feedback' + (correct ? '' : ' bad');
-    socket.emit('answer', value);
+    socket.emit('answer', { id: currentRound.id, value });
     currentRound = null;
     activeButtons = [];
+    const bar = document.getElementById('timerFill');
+    bar.style.transition = 'none';
+    bar.style.width = '0%';
     document.getElementById('options').innerHTML = '';
     document.getElementById('prompt').textContent = '...';
   }
@@ -250,16 +562,33 @@
   socket.on('state', (s) => updateUI(s)); // admin에서도 재사용 가능하도록
 
   function updateUI(s) {
+    latestState = s;
     document.getElementById('phaseLabel').textContent = s.phaseLabel || '대기중';
+    document.getElementById('introScreen').classList.toggle('hidden', !!(s.running || s.ended));
+    document.getElementById('warmupHint').classList.toggle('hidden', s.phase !== 'warmup');
+    if (!s.isBreak) document.getElementById('breakScreen').classList.add('hidden');
+    if (!s.ended) {
+      document.getElementById('revealScreen').classList.add('hidden');
+      const rs = document.getElementById('resultScreen');
+      rs.classList.add('hidden');
+      rs.classList.remove('win', 'lose');
+      document.body.classList.remove('office');
+    }
     const me = myId === 1 ? s.p1 : s.p2;
     const oppo = myId === 1 ? s.p2 : s.p1;
     if (!me) return;
 
-    document.getElementById('gaugeNum').textContent = Math.round(me.gauge);
-    const pct = Math.max(0, Math.min(100, me.gauge));
+    // 막대는 두 사람 중 더 높은 총점을 100%로 두는 상대 비율 (세션이 길어져도 항상 비교가 보이도록)
+    const hidden = !!me.hidden;
+    const maxT = hidden ? 100 : Math.max(100, s.p1.total, s.p2.total);
+    document.getElementById('gaugeLabel').textContent = hidden ? '내 총점 (6교시는 비공개!)' : '내 총점 (낮을수록 안전)';
+    document.getElementById('gaugeNum').textContent = hidden ? '???' : Math.round(me.total);
+    const pct = hidden ? 100 : Math.max(0, Math.min(100, (me.total / maxT) * 100));
     const fill = document.getElementById('gaugeBarFill');
     fill.style.width = pct + '%';
-    fill.classList.toggle('low', pct <= 30);
+    fill.classList.toggle('blind', hidden);
+    fill.classList.toggle('low', !hidden && me.total - oppo.total >= 25); // 상대보다 많이 들켰으면 경고색
+    document.getElementById('x2Badge').classList.toggle('hidden', !(s.multiplier === 2 && s.running));
     const token = document.getElementById('boardToken');
     token.style.left = `calc(${pct}% - 15px)`;
     const trapIcon = document.getElementById('trapWarningIcon');
@@ -267,8 +596,20 @@
     trapIcon.style.left = `calc(${pct}% - 10px)`;
     document.body.classList.toggle('warning', me.warning && !me.defeated);
 
+    const subjectRow = document.getElementById('subjectRow');
+    subjectRow.innerHTML = '';
+    const subjectEntries = me.scores ? Object.entries(me.scores) : ['국어', '영어', '수학', '사회', '과학', '예체능'].map((k) => [k, '?']);
+    subjectEntries.forEach(([subject, val]) => {
+      const chip = document.createElement('div');
+      chip.className = 'subject-chip';
+      chip.innerHTML = `<div class="label">${subject}</div><div class="val">${val}</div>`;
+      subjectRow.appendChild(chip);
+    });
+
     document.getElementById('stackLabel').textContent = '간섭스택 ' + Math.floor(me.stack);
-    document.getElementById('throwBtn').disabled = me.stack < 1 || me.defeated || oppo.defeated;
+    const canThrow = !(me.stack < 1 || me.defeated || oppo.defeated || !s.allowInterfere || s.patrol);
+    document.querySelectorAll('.atk').forEach((b) => { b.disabled = !canThrow; });
+    document.getElementById('hintBtn').disabled = !(me.stack >= 1 && s.allowInterfere && !s.patrol && currentRound && !currentRound.hinted);
 
     const comboLabel = document.getElementById('comboLabel');
     if (me.combo > 0) {
@@ -284,20 +625,64 @@
       comboLabel.classList.add('hidden');
     }
 
-    document.getElementById('oppoState').textContent = oppo.defeated ? '패배함' : (oppo.warning ? '위험!' : '플레이 중');
+    document.getElementById('oppoState').textContent = s.running ? standing() : '대기 중';
     document.getElementById('oppoWarning').classList.toggle('hidden', !oppo.warning || oppo.defeated);
   }
 
-  document.getElementById('throwBtn').onclick = () => socket.emit('throwInterference');
+  document.querySelectorAll('.atk').forEach((b) => { b.onclick = () => socket.emit('throwInterference', b.dataset.kind); });
+  document.getElementById('hintBtn').onclick = () => { socket.emit('hint'); };
   document.getElementById('defendBtn').onclick = () => {
     socket.emit('defend');
     document.getElementById('defendBtn').classList.add('hidden');
   };
 
+  // 선생님 순찰: 멈춰! (움직임은 서버가 판정)
+  let patrolIv = null;
+  socket.on('patrol', ({ ms }) => {
+    const scr = document.getElementById('patrolScreen');
+    document.getElementById('patrolCaughtMsg').textContent = '';
+    scr.classList.remove('hidden');
+    let left = Math.ceil(ms / 1000);
+    document.getElementById('patrolCount').textContent = left;
+    clearInterval(patrolIv);
+    patrolIv = setInterval(() => { left = Math.max(0, left - 1); document.getElementById('patrolCount').textContent = left; }, 1000);
+  });
+  socket.on('patrolEnd', () => {
+    clearInterval(patrolIv);
+    document.getElementById('patrolScreen').classList.add('hidden');
+    // 순찰 동안 멈춰 있던 제한시간 바를 다시 시작
+    if (currentRound) startBar(document.getElementById('timerFill'), currentRound.timeoutMs || 5000, currentRound.freeMs);
+    if (!document.getElementById('paceScreen').classList.contains('hidden')) startBar(document.getElementById('paceTimerFill'), 3500);
+  });
+  socket.on('patrolCaught', ({ points, subject }) => {
+    document.getElementById('patrolCaughtMsg').textContent = `걸렸다! 컨닝 적발 (${subject} +${points})`;
+    setMascot('shock', 2000);
+    document.body.classList.add('shake');
+    setTimeout(() => document.body.classList.remove('shake'), 400);
+  });
+
+  socket.on('ink', ({ ms }) => {
+    const els = [document.getElementById('prompt'), document.getElementById('options')];
+    els.forEach((e) => e.classList.add('inked'));
+    banner('잉크가 번졌다!', '#1f3a5f');
+    setTimeout(() => els.forEach((e) => e.classList.remove('inked')), ms || 2500);
+  });
+  socket.on('rush', ({ ms }) => {
+    if (ms > 0 && currentRound) { currentRound.timeoutMs = ms; startBar(document.getElementById('timerFill'), ms); }
+    banner(ms > 0 ? `시간 단축! 남은 시간 ${(ms / 1000).toFixed(1)}초` : '다음 문제 시간 단축!', '#b45309');
+  });
+  socket.on('hint', ({ roundId, key }) => {
+    if (!currentRound || currentRound.id !== roundId) return;
+    currentRound.hinted = true;
+    const idx = currentRound.options.findIndex((o) => o.key === key);
+    if (idx >= 0 && activeButtons[idx]) activeButtons[idx].classList.add('hinted');
+    document.getElementById('hintBtn').disabled = true;
+  });
+
   socket.on('incoming', ({ cardName, previewMs }) => {
     const bar = document.createElement('div');
     bar.className = 'incoming';
-    bar.textContent = `${cardName} 카드 도착! (${(previewMs/1000).toFixed(1)}초)`;
+    bar.textContent = `${cardName} 도착! 방어 버튼을 누르세요 (${(previewMs/1000).toFixed(1)}초)`;
     document.body.appendChild(bar);
     document.getElementById('defendBtn').classList.remove('hidden');
     setTimeout(() => { bar.remove(); document.getElementById('defendBtn').classList.add('hidden'); }, previewMs);
@@ -313,6 +698,7 @@
   let trapColor = null;
   socket.on('trapped', ({ color, target }) => {
     trapColor = color;
+    document.getElementById('paceScreen').classList.add('hidden');
     const screen = document.getElementById('trapScreen');
     screen.classList.remove('hidden');
     screen.style.backgroundColor = COLOR_HEX_MAP[color] || '#999';
@@ -338,10 +724,50 @@
     screen.style.backgroundColor = lightenHex(COLOR_HEX_MAP[trapColor] || '#999999', (progress / target) * 0.85);
   });
 
+  function banner(text, bg) {
+    const bar = document.createElement('div');
+    bar.className = 'incoming';
+    if (bg) bar.style.background = bg;
+    bar.textContent = text;
+    document.body.appendChild(bar);
+    setTimeout(() => bar.remove(), 1800);
+  }
+  socket.on('defendOk', () => banner('방어 성공! 방해공작을 막았다', '#0f6e56'));
+  socket.on('throwBlocked', () => banner('상대가 막아냈어요...', '#5c5770'));
+
+  // 쉬는 시간: 이번 교시 점수 + 다음 교시 안내
+  socket.on('breakTime', (b) => {
+    const mine = myId === 1 ? b.p1Delta : b.p2Delta;
+    const theirs = myId === 1 ? b.p2Delta : b.p1Delta;
+    const myT = myId === 1 ? b.p1Total : b.p2Total;
+    const opT = myId === 1 ? b.p2Total : b.p1Total;
+    document.getElementById('breakTitle').textContent = b.isWarmup ? '워밍업 끝! 이제 본 시험' : `${b.endedLabel} 종료!`;
+    document.getElementById('breakDelta').textContent = b.isWarmup ? '' : `이번 교시 내 점수 +${mine} (상대 +${theirs})`;
+    document.getElementById('breakTotals').textContent = b.isWarmup ? '' : `총점 나 ${myT} : 상대 ${opT} (낮을수록 승리)`;
+    document.getElementById('breakNext').textContent = b.nextLabel;
+    document.getElementById('breakHint').textContent = b.nextHint;
+    document.getElementById('breakScreen').classList.remove('hidden');
+    startBar(document.getElementById('breakFill'), (b.seconds || 5) * 1000);
+  });
+
   socket.on('trapFreed', () => {
     document.getElementById('trapScreen').classList.add('hidden');
     trapColor = null;
   });
+
+  socket.on('choosePace', ({ cardName, tier, timeoutMs }) => {
+    document.getElementById('paceCardName').textContent = cardName + (tier ? ` (난이도 ${tier})` : '');
+    document.getElementById('paceStanding').textContent = standing();
+    document.getElementById('paceScreen').classList.remove('hidden');
+    startBar(document.getElementById('paceTimerFill'), timeoutMs || 3500);
+  });
+
+  function choosePace(mode) {
+    document.getElementById('paceScreen').classList.add('hidden');
+    socket.emit('choosePace', mode);
+  }
+  document.getElementById('paceSafeBtn').onclick = () => choosePace('safe');
+  document.getElementById('paceTurboBtn').onclick = () => choosePace('turbo');
 
   socket.on('specialEvent', ({ cardName, label }) => {
     const bar = document.createElement('div');
@@ -352,27 +778,65 @@
     setTimeout(() => bar.remove(), 2200);
   });
 
-  socket.on('defeated', () => {
-    document.body.classList.add('office');
-    showResult(false);
-  });
-  socket.on('opponentDefeated', () => {
-    // 계속 진행, 알림만
-    const fb = document.getElementById('feedback');
-    fb.textContent = '상대가 발각되었습니다! 계속 진행하세요';
-  });
+  const SUBJECT_TIPS = {
+    국어: '글자색과 이름이 어긋난 단어 하나가 오답(안전)이에요',
+    영어: '철자가 이상한 단어 하나가 오답(안전)이에요',
+    수학: '나머지와 성질이 다른 하나(예: 3·삼·three 사이의 5)를 찾으세요',
+    사회: '막힌 길 하나, 수도가 틀린 쌍 하나가 오답이에요',
+    과학: '물에 뜨는 것·자석에 붙는 것·곤충… 안 맞는 하나를 찾으세요',
+    예체능: '외친 것·가리킨 쪽이 "아닌" 보기를 고르세요',
+  };
 
-  socket.on('gameOver', ({ winner }) => {
-    showResult(winner === myId);
-  });
+  socket.on('finalRush', () => banner('막판! 지금부터 점수 2배!', '#7a1a1a'));
 
-  function showResult(won) {
+  // 결과 발표: 두 점수가 카운트업되고 나서 승패 화면
+  function startReveal(data, done) {
+    const scr = document.getElementById('revealScreen');
+    const myT = myId === 1 ? data.p1Total : data.p2Total;
+    const opT = myId === 1 ? data.p2Total : data.p1Total;
+    const mineEl = document.getElementById('revealMine');
+    const oppEl = document.getElementById('revealOpp');
+    const dur = window.__revealMs != null ? window.__revealMs : 2600;
+    mineEl.textContent = 0; oppEl.textContent = 0;
+    scr.classList.remove('hidden');
+    const t0 = Date.now();
+    (function tick() {
+      const k = dur <= 0 ? 1 : Math.min(1, (Date.now() - t0) / dur);
+      const e = 1 - Math.pow(1 - k, 3);
+      mineEl.textContent = Math.round(myT * e);
+      oppEl.textContent = Math.round(opT * e);
+      if (k < 1) setTimeout(tick, 30);
+      else setTimeout(() => { scr.classList.add('hidden'); done(); }, dur <= 0 ? 0 : 800);
+    })();
+  }
+  socket.on('gameOver', (data) => startReveal(data, () => showResult(data)));
+
+  function showResult(data) {
     const el = document.getElementById('resultScreen');
-    el.classList.remove('hidden');
+    el.className = 'result-screen';
+    const tie = data.winner === null;
+    const won = data.winner === myId;
     el.classList.add(won ? 'win' : 'lose');
-    document.getElementById('resultIcon').className = 'ti ' + (won ? 'ti-beach' : 'ti-briefcase');
-    document.getElementById('resultTitle').textContent = won ? '바보 인증 성공' : '정체 발각';
-    document.getElementById('resultStamp').textContent = won ? '생존' : '출근 확정';
+    document.getElementById('resultIcon').className = 'ti ' + (tie ? 'ti-equal' : (won ? 'ti-beach' : 'ti-briefcase'));
+    document.getElementById('resultFace').innerHTML = faceSvg(tie ? 'smug' : (won ? 'happy' : 'cry'), 120);
+    document.getElementById('resultTitle').textContent = tie ? '무승부' : (won ? '바보 인증 성공' : '정체 발각');
+    document.getElementById('resultStamp').textContent = tie ? '재경기' : (won ? '생존' : '출근 확정');
+
+    const mine = myId === 1 ? data.p1Scores : data.p2Scores;
+    const myTotal = myId === 1 ? data.p1Total : data.p2Total;
+    const oppTotal = myId === 1 ? data.p2Total : data.p1Total;
+    const entries = Object.entries(mine || {});
+    const worst = entries.reduce((a, b) => (b[1] > a[1] ? b : a), ['', 0]);
+    const chips = entries.map(([k, v]) => `<span class="chip">${k} <b>${v}</b></span>`).join('');
+    const tip = worst[1] > 0
+      ? `다음엔 <b>${worst[0]}</b>(${worst[1]}점)을 조심! → ${SUBJECT_TIPS[worst[0]]}`
+      : '한 번도 안 들켰어요. 완벽한 바보!';
+    const myTitles = (myId === 1 ? data.p1Titles : data.p2Titles) || [];
+    const titlesHtml = myTitles.length
+      ? `<div class="titles">${myTitles.map((t) => `<div>🏅 <b>${t.name}</b> <span style="font-size:13px; color:#5c5770;">${t.desc}</span></div>`).join('')}</div>` : '';
+    document.getElementById('resultReport').innerHTML =
+      `<div style="font-size:14px; margin-bottom:8px;">내 총점 <b>${myTotal}</b> vs 상대 <b>${oppTotal}</b> (낮을수록 승리)</div>` +
+      `<div class="chips">${chips}</div>${titlesHtml}<div class="tip">${tip}</div>`;
   }
 </script>
 </body>

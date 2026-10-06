@@ -44,11 +44,12 @@
 <body>
   <div class="top">
     <div>
-      <h1>위장 게이지 대결 — 진행 상황</h1>
+      <h1>위장 시험 대결 — 진행 상황</h1>
       <div class="status" id="statusLine">연결 대기 중</div>
     </div>
     <div class="controls">
-      <button class="primary" id="startBtn">세션 시작</button>
+      <button class="primary" id="startBtn">세션 시작 (2인)</button>
+      <button id="startBotBtn" title="플레이어 2를 봇이 대신 플레이합니다. 혼자서 전체 흐름을 테스트할 때 사용">봇과 시작 (혼자 테스트)</button>
       <button id="skipBtn">다음 구간</button>
       <button class="danger" id="resetBtn">리셋</button>
       <button id="downloadBtn">로그 다운로드</button>
@@ -75,20 +76,19 @@
 <script>
   const socket = io({ query: { role: 'admin' } });
   let fullLog = [];
-  const PHASES = [
-    { id: 'warmup', label: '워밍업' },
-    { id: 'act1', label: '1막' },
-    { id: 'act2', label: '2막' },
-    { id: 'boss', label: '보스전' },
-  ];
+  let PHASES = []; // 서버가 알려주는 교시표(timeline)
 
   function playerCard(id, p) {
-    const gaugeClass = p.gauge <= 30 ? 'low' : (p.gauge <= 50 ? 'warn' : '');
+    const maxT = Math.max(100, window.__s ? Math.max(window.__s.p1.total, window.__s.p2.total) : 100);
+    const pct = Math.min(100, (p.total / maxT) * 100);
+    const gaugeClass = p.warning ? 'low' : '';
+    const subjectsHtml = Object.entries(p.scores || {}).map(([s, v]) => `<span style="display:inline-block; min-width:50px; margin-right:6px;">${s} <b>${v}</b></span>`).join('');
     return `
       <div class="card">
         <h2>플레이어 ${id} ${p.defeated ? '<span class="badge defeated">패배(출근)</span>' : (p.warning ? '<span class="badge warning">경고모드</span>' : '')}</h2>
-        <div class="row"><span>게이지</span><span>${Math.round(p.gauge)}</span></div>
-        <div class="gauge-bar"><div class="gauge-fill ${gaugeClass}" style="width:${p.gauge}%"></div></div>
+        <div class="row"><span>총점</span><span>${Math.round(p.total)}</span></div>
+        <div class="gauge-bar"><div class="gauge-fill ${gaugeClass}" style="width:${pct}%"></div></div>
+        <div class="row" style="font-size:11px; color:#aaa;">${subjectsHtml}</div>
         <div class="row"><span>간섭 스택</span><span>${p.stack.toFixed(1)}</span></div>
         <div class="row"><span>콤보</span><span>${p.combo}</span></div>
       </div>
@@ -96,15 +96,18 @@
   }
 
   function render(s) {
+    window.__s = s;
     document.getElementById('statusLine').textContent =
-      (s.running ? '진행 중 — ' + s.phaseLabel : (s.winner ? '종료 — 승자: 플레이어 ' + s.winner : '대기 중'));
+      (s.running ? '진행 중 — ' + s.phaseLabel + (s.blind ? ' (점수 비공개 중 — 관제 화면에서만 보입니다)' : '') + (s.multiplier === 2 ? ' ×2' : '') : (s.winner ? '종료 — 승자: 플레이어 ' + s.winner : '대기 중'));
     document.getElementById('playerGrid').innerHTML = playerCard(1, s.p1) + playerCard(2, s.p2);
 
+    if (s.timeline) PHASES = s.timeline;
     const track = document.getElementById('phaseTrack');
     const currentIdx = PHASES.findIndex((ph) => ph.id === s.phase);
     track.innerHTML = PHASES.map((ph, i) => {
       const cls = i === currentIdx ? 'active' : (i < currentIdx ? 'done' : '');
-      return `<div class="phase-step ${cls}">${ph.label}</div>`;
+      const style = ph.isBreak ? 'flex:0 0 14px; padding:8px 0; font-size:0;' : '';
+      return `<div class="phase-step ${cls}" style="${style}" title="${ph.label}">${ph.isBreak ? '' : ph.label.replace('교시 ', '교시<br>')}</div>`;
     }).join('');
   }
 
@@ -138,6 +141,7 @@
   }
 
   document.getElementById('startBtn').onclick = () => socket.emit('admin:start');
+  document.getElementById('startBotBtn').onclick = () => socket.emit('admin:start', { bot: true });
   document.getElementById('resetBtn').onclick = () => socket.emit('admin:reset');
   document.getElementById('skipBtn').onclick = () => socket.emit('admin:skipPhase');
   document.getElementById('downloadBtn').onclick = () => {
