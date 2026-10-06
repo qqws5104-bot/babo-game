@@ -184,6 +184,7 @@ body.office { background: #cdd3df; }
 .opt-btn:nth-child(4n+1) { background: #d9ff7a; } .opt-btn:nth-child(4n+2) { background: #9ff0ff; }
 .opt-btn:nth-child(4n+3) { background: #ffc2e3; } .opt-btn:nth-child(4n+4) { background: #ffd58a; }
 .opt-btn.colorw { background: #fff; }
+.opt-btn.plain:not(.hinted) { background: #fff !important; }
 .opt-btn.foot { border-color: var(--ink); box-shadow: 0 6px 0 var(--ink); height: 98px; }
 .opt-btn:active, .opt-btn.foot:active { transform: translateY(6px); box-shadow: 0 0 0 var(--ink); }
 .opt-btn.hinted { background: #fff68a; box-shadow: 0 0 0 5px #39d6ff, 0 6px 0 var(--ink); }
@@ -224,6 +225,15 @@ body.office { background: #cdd3df; }
 .stamp { background: #fff; border: 5px double var(--ink); box-shadow: 0 5px 0 var(--ink); }
 .result-screen.win .stamp { color: #0a8f3c; } .result-screen.lose .stamp { color: #d4002a; }
 .report .chip { background: #fff; border: 2px solid var(--ink); } .report .tip, .titles { background: #fff; border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); }
+/* 먹물 방해: 검은 잉크가 화면을 덮고, 연타하면 흰 바탕이 번져 나옴 */
+#trapScreen { background: #0a0614 !important; color: #fff; z-index: 18; overflow: hidden; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation; padding: 0; }
+.ink-white { position: absolute; left: 50%; top: 54%; width: 140px; height: 140px; border-radius: 50%; background: #fff; transform: translate(-50%, -50%); filter: url(#inkEdge); transition: width .07s ease-out, height .07s ease-out; }
+.ink-top, .ink-center, .ink-sub, .ink-count { position: absolute; left: 0; right: 0; text-align: center; color: #fff; mix-blend-mode: difference; pointer-events: none; }
+.ink-top { top: 6%; font-family: 'Black Han Sans', 'Jua', sans-serif; font-size: 24px; }
+.ink-center { top: 54%; transform: translateY(-50%); font-family: 'Black Han Sans', 'Jua', sans-serif; font-size: 52px; transition: transform .05s; }
+.ink-center.hit { transform: translateY(-50%) scale(1.25) rotate(-3deg); }
+.ink-sub { bottom: 17%; font-size: 15px; }
+.ink-count { bottom: 7%; font-family: 'Black Han Sans', 'Jua', sans-serif; font-size: 34px; }
 /* 마스코트 + 만화 효과음 */
 .mascot { position: absolute; top: -34px; right: 6px; width: 72px; height: 72px; z-index: 4; filter: drop-shadow(0 4px 0 rgba(27,16,64,.35)); }
 .mascot svg { width: 100%; height: 100%; display: block; }
@@ -279,8 +289,8 @@ body.office { background: #cdd3df; }
   </div>
 
   <div class="actions">
-    <button class="btn btn-throw atk" data-kind="doodle" disabled title="낙서: 상대 화면이 색으로 뒤덮여 다른 색을 30번 연타해야 풀림"><i class="ti ti-pencil"></i> 낙서</button>
-    <button class="btn btn-throw atk" data-kind="ink" disabled title="잉크 번짐: 상대 문제가 잠깐 흐려짐"><i class="ti ti-droplet"></i> 잉크</button>
+    <button class="btn btn-throw atk" data-kind="doodle" disabled title="먹물: 상대 화면이 검은 잉크로 덮여 빠르게 30번 연타해야 닦임"><i class="ti ti-droplet"></i> 먹물</button>
+    <button class="btn btn-throw atk" data-kind="ink" disabled title="흐림: 상대 문제가 잠깐 흐려짐"><i class="ti ti-eye-off"></i> 흐림</button>
     <button class="btn btn-throw atk" data-kind="rush" disabled title="시간 단축: 상대 남은 시간이 2.5초로 줄어듦"><i class="ti ti-hourglass"></i> 시간단축</button>
     <button class="btn btn-hint" id="hintBtn" disabled><i class="ti ti-notebook"></i> 족보 보기 (오답 힌트)</button>
     <button class="btn btn-defend hidden" id="defendBtn" style="flex: 1 1 100%;"><i class="ti ti-shield"></i> 방어!</button>
@@ -359,12 +369,18 @@ body.office { background: #cdd3df; }
     </div>
   </div>
 
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="inkEdge" x="-30%" y="-30%" width="160%" height="160%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.016" numOctaves="3" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="80" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </svg>
   <div class="trap-screen hidden" id="trapScreen">
-    <p style="font-size:22px; font-weight:800; margin-bottom:6px;">상대방이 방해공작을 펼쳤다!</p>
-    <p style="font-size:16px; font-weight:600; margin-bottom:14px;">다른 색을 연타해서 풀어내세요</p>
-    <div class="trap-progress"><div class="trap-progress-fill" id="trapProgressFill"></div></div>
-    <p style="font-size:16px; margin:10px 0 20px;"><span id="trapProgressNum">0</span> / <span id="trapTargetNum">30</span></p>
-    <div class="options" id="trapOptions"></div>
+    <div class="ink-white" id="inkWhite"></div>
+    <div class="ink-top">상대방이 방해공작을 펼쳤다!</div>
+    <div class="ink-center" id="inkCenter">연타!</div>
+    <div class="ink-sub">화면을 마구 두드려서 먹물을 닦아내세요</div>
+    <div class="ink-count"><span id="trapProgressNum">0</span> / <span id="trapTargetNum">30</span></div>
   </div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -535,6 +551,7 @@ body.office { background: #cdd3df; }
         btn.className = 'opt-btn txt';
         btn.innerHTML = `${opt.label}${key}`;
       }
+      if (round.cardId === 'korean') btn.classList.add('plain'); // 색 문제에서는 버튼에 색을 쓰지 않음 (헷갈림 방지)
       btn.onclick = () => submitAnswer(opt.key);
       optsEl.appendChild(btn);
       activeButtons.push(btn);
@@ -666,7 +683,7 @@ body.office { background: #cdd3df; }
   socket.on('ink', ({ ms }) => {
     const els = [document.getElementById('prompt'), document.getElementById('options')];
     els.forEach((e) => e.classList.add('inked'));
-    banner('잉크가 번졌다!', '#1f3a5f');
+    banner('문제가 흐려졌다!', '#1f3a5f');
     setTimeout(() => els.forEach((e) => e.classList.remove('inked')), ms || 2500);
   });
   socket.on('rush', ({ ms }) => {
@@ -690,40 +707,48 @@ body.office { background: #cdd3df; }
     setTimeout(() => { bar.remove(); document.getElementById('defendBtn').classList.add('hidden'); }, previewMs);
   });
 
-  function lightenHex(hex, fraction) {
-    const n = parseInt(hex.slice(1), 16);
-    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-    const mix = (c) => Math.round(c + (255 - c) * fraction);
-    return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+  // ---- 먹물 방해: 아무 데나 탭/아무 키나 연타 → 흰 바탕이 번져 나옴 ----
+  let inkLocal = 0;
+  let inkTarget = 30;
+  let inkHideT = null;
+  function inkRender() {
+    const frac = Math.max(0, Math.min(1, inkLocal / inkTarget));
+    const full = Math.hypot(window.innerWidth || 400, window.innerHeight || 700) * 1.5;
+    const size = 140 + (full - 140) * Math.pow(frac, 0.85);
+    const w = document.getElementById('inkWhite');
+    w.style.width = size + 'px';
+    w.style.height = size + 'px';
+    document.getElementById('trapProgressNum').textContent = Math.floor(inkLocal);
   }
+  function inkTap() {
+    if (document.getElementById('trapScreen').classList.contains('hidden')) return;
+    inkLocal = Math.min(inkTarget, inkLocal + 1); // 눌렀을 때 바로 반응(서버 값이 오면 맞춤)
+    inkRender();
+    const c = document.getElementById('inkCenter');
+    c.classList.add('hit');
+    setTimeout(() => c.classList.remove('hit'), 60);
+    socket.emit('mash');
+  }
+  document.getElementById('trapScreen').addEventListener('pointerdown', (e) => { e.preventDefault(); inkTap(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.repeat) return; // 키를 꾹 누르고 있는 건 연타로 안 침
+    if (!document.getElementById('trapScreen').classList.contains('hidden')) { e.preventDefault(); inkTap(); }
+  });
 
-  let trapColor = null;
-  socket.on('trapped', ({ color, target }) => {
-    trapColor = color;
+  socket.on('trapped', ({ target }) => {
     document.getElementById('paceScreen').classList.add('hidden');
-    const screen = document.getElementById('trapScreen');
-    screen.classList.remove('hidden');
-    screen.style.backgroundColor = COLOR_HEX_MAP[color] || '#999';
-    document.getElementById('trapProgressNum').textContent = 0;
-    document.getElementById('trapTargetNum').textContent = target;
-    document.getElementById('trapProgressFill').style.width = '0%';
-    const optsEl = document.getElementById('trapOptions');
-    optsEl.innerHTML = '';
-    Object.keys(COLOR_HEX_MAP).filter((c) => c !== color).forEach((c) => {
-      const btn = document.createElement('button');
-      btn.className = 'trap-btn';
-      btn.textContent = c;
-      btn.style.background = COLOR_HEX_MAP[c];
-      btn.onclick = () => socket.emit('mash', c);
-      optsEl.appendChild(btn);
-    });
+    clearTimeout(inkHideT);
+    inkTarget = target || 30;
+    inkLocal = 0;
+    document.getElementById('trapTargetNum').textContent = inkTarget;
+    document.getElementById('trapScreen').classList.remove('hidden');
+    inkRender();
   });
 
   socket.on('trapProgress', ({ progress, target }) => {
-    document.getElementById('trapProgressNum').textContent = progress;
-    document.getElementById('trapProgressFill').style.width = (progress / target * 100) + '%';
-    const screen = document.getElementById('trapScreen');
-    screen.style.backgroundColor = lightenHex(COLOR_HEX_MAP[trapColor] || '#999999', (progress / target) * 0.85);
+    inkTarget = target || inkTarget;
+    inkLocal = progress;
+    inkRender();
   });
 
   function banner(text, bg) {
@@ -753,8 +778,10 @@ body.office { background: #cdd3df; }
   });
 
   socket.on('trapFreed', () => {
-    document.getElementById('trapScreen').classList.add('hidden');
-    trapColor = null;
+    inkLocal = inkTarget;
+    inkRender(); // 화면이 완전히 하얘진 뒤 닫힘
+    clearTimeout(inkHideT);
+    inkHideT = setTimeout(() => document.getElementById('trapScreen').classList.add('hidden'), 220);
   });
 
   socket.on('choosePace', ({ cardName, tier, timeoutMs }) => {

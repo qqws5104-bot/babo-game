@@ -30,8 +30,11 @@ const CONFIG = {
   slowPointsPerSec: 6, // 3초를 넘긴 시간 1초당 쌓이는 점수 (최대 30)
   patrolMs: 3000, // 선생님 순찰(멈춰!) 지속 시간
   patrolPenalty: 15, // 순찰 중 움직이면(컨닝) 쌓이는 점수
+  trapTarget: 30, // 먹물 방해: 이만큼 연타해야 닦임
+  trapDecay: 0.25, // 먹물이 150ms마다 도로 번지는 양 (느리게 누르면 안 닦임 = 빠르게 연타해야 함)
+  trapTickMs: 150,
   rushMs: 2500, // '시간 단축' 방해: 남은 시간을 이만큼으로 줄임
-  inkMs: 2500, // '잉크 번짐' 방해: 보기가 흐려지는 시간
+  inkMs: 2500, // '흐림' 방해: 문제·보기가 흐려지는 시간
   phases: [
     { id: 'warmup', label: '워밍업', durationSec: 30, cardPool: ['giboo'], hint: '외친 것이 아닌 걸 골라요 (점수 없음)' },
     { id: 'b0', label: '쉬는 시간', durationSec: 5, isBreak: true, cardPool: [] },
@@ -39,7 +42,7 @@ const CONFIG = {
     { id: 'b1', label: '쉬는 시간', durationSec: 5, isBreak: true, cardPool: [] },
     { id: 'p2', label: '2교시 영어', subject: '영어', durationSec: 150, cardPool: ['english'], hint: '철자가 틀린 단어 하나를 찾아요 · 선생님이 순찰하면 손 떼기!', patrolCount: 1 },
     { id: 'b2', label: '쉬는 시간', durationSec: 5, isBreak: true, cardPool: [] },
-    { id: 'p3', label: '3교시 수학', subject: '수학', durationSec: 150, cardPool: ['math'], allowInterfere: true, allowPace: true, hint: '나머지와 다른 하나를 찾아요 · 방해 3종(낙서·잉크·시간단축)·족보·안전/터보 등장!', patrolCount: 1 },
+    { id: 'p3', label: '3교시 수학', subject: '수학', durationSec: 150, cardPool: ['math'], allowInterfere: true, allowPace: true, hint: '나머지와 다른 하나를 찾아요 · 방해 3종(먹물·흐림·시간단축)·족보·안전/터보 등장!', patrolCount: 1 },
     { id: 'b3', label: '쉬는 시간', durationSec: 5, isBreak: true, cardPool: [] },
     { id: 'p4', label: '4교시 사회', subject: '사회', durationSec: 150, cardPool: ['social'], allowInterfere: true, allowPace: true, eventCount: 1, patrolCount: 1, hint: '막힌 길 / 틀린 수도를 찾아요' },
     { id: 'b4', label: '쉬는 시간', durationSec: 5, isBreak: true, cardPool: [] },

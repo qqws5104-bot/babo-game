@@ -153,6 +153,8 @@ function clearAllTimers() {
   patrolTimers.forEach(clearTimeout);
   patrolTimers = [];
   clearTimeout(patrolEndTimer);
+  stopTrapTimer(1);
+  stopTrapTimer(2);
   if (state) state.patrol = null;
 }
 
@@ -486,13 +488,10 @@ function botChoosePace(id) {
 }
 
 function botEscapeTrap(id) {
-  const color = state[`p${id}`].trapColor;
-  const others = COLORS.filter((c) => c !== color);
-  let n = 0;
   const iv = setInterval(() => {
     if (!state.running || !state[`p${id}`].trapColor) { clearInterval(iv); return; }
     if (state.patrol) return;
-    mashTrap(id, others[n++ % others.length]);
+    mashTrap(id);
   }, 140);
 }
 
@@ -622,7 +621,7 @@ function titlesFor(p) {
   if (st.turbo >= 4) out.push({ name: '터보 중독자', desc: `터보 ${st.turbo}번` });
   if (throws >= 4) out.push({ name: '방해공작 천재', desc: `방해 ${throws}번` });
   if (st.defendOk >= 2) out.push({ name: '철벽 방어', desc: `방어 성공 ${st.defendOk}번` });
-  if (st.trapEscapes >= 2) out.push({ name: '낙서 탈출 전문가', desc: `${st.trapEscapes}번 탈출` });
+  if (st.trapEscapes >= 2) out.push({ name: '먹물 탈출 전문가', desc: `${st.trapEscapes}번 탈출` });
   if (st.caught >= 1) out.push({ name: '순찰에 움찔한 사람', desc: `순찰 때 ${st.caught}번 걸림` });
   if (st.hints >= 3) out.push({ name: '족보 마니아', desc: `족보 ${st.hints}번` });
   if (st.maxCombo >= 10) out.push({ name: '연속 바보 장인', desc: `${st.maxCombo}연속 위장` });
@@ -645,7 +644,7 @@ function endGame() {
   broadcastState();
 }
 
-const INTERFERE_KINDS = { doodle: '낙서 방해', ink: '잉크 번짐', rush: '시간 단축' };
+const INTERFERE_KINDS = { doodle: '먹물 폭탄', ink: '흐려짐', rush: '시간 단축' };
 
 function throwInterference(fromId, kind) {
   kind = INTERFERE_KINDS[kind] ? kind : 'doodle';
@@ -732,25 +731,40 @@ function useHint(id) {
   broadcastState();
 }
 
+// 먹물 방해: 화면이 검은 잉크로 덮임 → 빠르게 연타해서 닦아내야 함 (천천히 누르면 도로 번짐)
+let trapTimers = { 1: null, 2: null };
+
+function stopTrapTimer(id) {
+  clearInterval(trapTimers[id]);
+  trapTimers[id] = null;
+}
+
 function startTrap(id) {
   const p = state[`p${id}`];
   p.currentRound = null; // 진행 중이던 라운드는 취소, 함정부터 탈출해야 함
   p.pendingCardId = null; // 선택 대기 중이었다면 그것도 취소 (탈출 후 새로 발급)
   emitSpec('spec:event', { kind: 'trap', player: id });
-  p.trapColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+  p.trapColor = 'ink'; // 함정 진행 중 표시 (색 개념은 폐기)
   p.trapProgress = 0;
-  p.trapTarget = 30; // 연타 필요 횟수
-  addLog({ type: 'trap_start', player: id, color: p.trapColor });
-  io.to(`player${id}`).emit('trapped', { color: p.trapColor, target: p.trapTarget });
+  p.trapTarget = CONFIG.trapTarget;
+  addLog({ type: 'trap_start', player: id });
+  io.to(`player${id}`).emit('trapped', { target: p.trapTarget });
   broadcastState();
   scheduleAfk(id);
+  stopTrapTimer(id);
+  trapTimers[id] = setInterval(() => {
+    const q = state[`p${id}`];
+    if (!state.running || !q.trapColor) { stopTrapTimer(id); return; }
+    if (state.patrol || q.trapProgress <= 0) return;
+    q.trapProgress = Math.max(0, q.trapProgress - CONFIG.trapDecay);
+    io.to(`player${id}`).emit('trapProgress', { progress: q.trapProgress, target: q.trapTarget });
+  }, CONFIG.trapTickMs);
   if (isBot(id)) botEscapeTrap(id);
 }
 
-function mashTrap(id, colorPressed) {
+function mashTrap(id) {
   const p = state[`p${id}`];
   if (!p.trapColor) return;
-  if (colorPressed === p.trapColor) return; // 함정 색과 같은 걸 누르면 무효 (진행 없음)
   p.trapProgress = Math.min(p.trapTarget, p.trapProgress + 1);
   scheduleAfk(id);
   io.to(`player${id}`).emit('trapProgress', { progress: p.trapProgress, target: p.trapTarget });
@@ -758,6 +772,7 @@ function mashTrap(id, colorPressed) {
     addLog({ type: 'trap_cleared', player: id });
     p.stats.trapEscapes++;
     emitSpec('spec:event', { kind: 'trapFreed', player: id });
+    stopTrapTimer(id);
     p.trapColor = null;
     p.trapProgress = 0;
     p.trapTarget = 0;
@@ -825,7 +840,7 @@ io.on('connection', (socket) => {
   });
   socket.on('throwInterference', (kind) => { if (patrolBlocks(id)) return; throwInterference(id, kind); });
   socket.on('defend', () => { if (patrolBlocks(id)) return; defend(id); });
-  socket.on('mash', (color) => { if (patrolBlocks(id)) return; mashTrap(id, color); });
+  socket.on('mash', () => { if (patrolBlocks(id)) return; mashTrap(id); });
   socket.on('choosePace', (mode) => { if (patrolBlocks(id)) return; finishRoundWithPace(id, mode === 'turbo' ? 'turbo' : 'safe'); });
   socket.on('hint', () => { if (patrolBlocks(id)) return; useHint(id); });
 

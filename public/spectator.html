@@ -111,6 +111,7 @@ body { font-family: 'Jua', 'Do Hyeon', sans-serif; color: #fff;
 .opts .opt:nth-child(4n+1) { background: #d9ff7a; } .opts .opt:nth-child(4n+2) { background: #9ff0ff; }
 .opts .opt:nth-child(4n+3) { background: #ffc2e3; } .opts .opt:nth-child(4n+4) { background: #ffd58a; }
 .opt.colorw { background: #fff !important; }
+.opts.plain .opt { background: #fff !important; }
 .ruleline { color: #fff; background: #ff3d5a; border: 3px solid var(--ink); border-radius: 999px; display: inline-block; padding: 1px 14px; font-size: 15px; box-shadow: 0 3px 0 var(--ink); }
 .cross .open { background: #b6f24a; color: var(--ink); } .cross .blocked { background: #ff9aa8; color: #a3001f; }
 .cross .arm, .cross .center { border: 3px solid var(--ink); }
@@ -249,7 +250,7 @@ body { font-family: 'Jua', 'Do Hyeon', sans-serif; color: #fff;
     else stage = `<div class="badge t${c.tier}">${c.cardName}${c.paceMode === 'turbo' ? ' · 터보' : c.paceMode === 'safe' ? ' · 안전' : ''}</div>
       <div class="stem">${c.stem}</div>
       ${visualHtml(c.visual)}
-      <div class="opts">${c.options.map(optHtml).join('')}</div>
+      <div class="opts ${c.cardId === 'korean' ? 'plain' : ''}">${c.options.map(optHtml).join('')}</div>
       <div class="ruleline">정답 말고 오답을 고르세요!</div>`;
     const flash = f ? `<div class="flash ${f.success ? 'ok' : 'bad'}">
         ${faceSvg(f.success ? 'smug' : (f.timeout ? 'sleep' : 'shock'), 84)}
@@ -257,7 +258,7 @@ body { font-family: 'Jua', 'Do Hyeon', sans-serif; color: #fff;
         <div class="sub">${f.reason}${f.subject ? ` · ${f.subject}` : ''}${f.gift ? ' · 상대가 틈을 노려요' : ''}</div></div>` : '';
     return `
       <div class="pname"><span>플레이어 ${id}</span>
-        <span class="tags">${p && p.isTrapped ? '<span class="tag trap">색 함정!</span>' : ''}${p && p.warning ? '<span class="tag warn">출근 위험</span>' : ''}</span></div>
+        <span class="tags">${p && p.isTrapped ? '<span class="tag trap">먹물 범벅!</span>' : ''}${p && p.warning ? '<span class="tag warn">출근 위험</span>' : ''}</span></div>
       <div class="total-row"><span class="total-num">${hidden ? '???' : (p ? p.total : 0)}</span><span class="total-lbl">${hidden ? '6교시 점수 비공개!' : '총점 (낮을수록 안전)'}</span></div>
       <div class="bar"><div class="bar-fill ${hidden ? 'blind' : (behind ? 'hot' : '')}" style="width:${pct}%"></div></div>
       <div class="chips">${subjects}</div>
@@ -328,10 +329,10 @@ body { font-family: 'Jua', 'Do Hyeon', sans-serif; color: #fff;
       ef.textContent = '막판 점수 2배!';
       ef.classList.remove('hidden');
       setTimeout(() => ef.classList.add('hidden'), 2500);
-    } else if (e.kind === 'ink') pushTicker(`플레이어 ${e.player}의 문제에 잉크가 번졌다!`);
+    } else if (e.kind === 'ink') pushTicker(`플레이어 ${e.player}의 문제가 흐려졌다!`);
     else if (e.kind === 'rush') pushTicker(`플레이어 ${e.player}의 남은 시간이 줄어들었다!`);
     else if (e.kind === 'hint') pushTicker(`플레이어 ${e.player}이(가) 족보를 봤다!`);
-    else if (e.kind === 'trap') pushTicker(`플레이어 ${e.player}, 색 함정에 걸림! 다른 색을 30번 연타해야 풀려요`);
+    else if (e.kind === 'trap') pushTicker(`플레이어 ${e.player}, 먹물 범벅! 화면을 빠르게 연타해서 닦아내야 해요`);
     else if (e.kind === 'trapFreed') pushTicker(`플레이어 ${e.player} 함정 탈출!`);
     else if (e.kind === 'special') {
       pushTicker(`특수 이벤트 발동: ${e.label}!`);
